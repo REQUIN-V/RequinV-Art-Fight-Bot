@@ -1,49 +1,41 @@
+import { AttachmentBuilder } from 'discord.js';
+
 export default {
   name: 'profile',
-  description: 'View your profile or another user\'s. Usage: !profile [@user]',
-  async execute(message) {
+  description: 'View your profile or another user’s.',
+  async execute(message, args) {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
     const target = message.mentions.users.first() || message.author;
-    const userData = db.data.users.find(user => user.id === target.id);
+    const user = db.data.users.find(u => u.id === target.id);
 
-    if (!userData) {
-      return message.reply(`❌ ${target.username} has not registered a character yet.`);
+    if (!user) {
+      return message.reply('❌ This user has not registered a character.');
     }
 
-    const attacks = db.data.attacks.filter(a => a.from === target.id);
-    const totalPoints = attacks.reduce((sum, a) => sum + a.points, 0);
+    const totalXP = (db.data.attacks || [])
+      .filter(a => a.from === user.id)
+      .reduce((sum, a) => sum + a.points, 0);
 
-    // XP & Ranks based on total points
-    const getRank = (points) => {
-      if (points >= 100) return '🌟 Master Artist';
-      if (points >= 50) return '🎨 Advanced';
-      if (points >= 20) return '✏️ Intermediate';
-      if (points >= 5) return '📌 Beginner';
-      return '🧃 Newbie';
-    };
-
-    const galleryLinks = attacks
-      .slice(-3) // latest 3 attacks
-      .map(a => `[Artwork](${a.imageUrl})`)
-      .join('\n') || 'No artwork submitted yet.';
+    const level = Math.floor(totalXP / 20) + 1;
+    const gallery = user.gallery || [];
+    const recentImages = gallery.slice(-4).map(g => g.imageUrl);
 
     const embed = {
-      title: `${target.username}'s Profile`,
+      title: `${target.username}'s Character Profile`,
       color: 0xff9ecb,
       fields: [
-        { name: 'Character', value: userData.character || 'Unnamed', inline: true },
-        { name: 'Team', value: userData.team || 'None', inline: true },
-        { name: 'Total Points', value: totalPoints.toString(), inline: true },
-        { name: 'XP Rank', value: getRank(totalPoints), inline: true },
-        { name: 'Gallery (Last 3)', value: galleryLinks }
+        { name: '🎭 Name', value: user.characterName, inline: true },
+        { name: '🧠 XP', value: `${totalXP} XP`, inline: true },
+        { name: '⭐ Rank', value: `Level ${level}`, inline: true },
+        { name: '🏳️ Team', value: user.team || 'None', inline: true }
       ],
-      footer: {
-        text: 'Profic Art Royal'
-      }
+      image: recentImages[0] ? { url: recentImages[0] } : undefined,
+      footer: { text: gallery.length ? `🖼️ Showing 1 of ${gallery.length} art submissions` : '' }
     };
 
-    message.channel.send({ embeds: [embed] });
+    await message.channel.send({ embeds: [embed] });
   }
 };
+
