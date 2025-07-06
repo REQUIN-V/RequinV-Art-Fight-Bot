@@ -13,6 +13,7 @@ export default {
 
     const attachment = message.attachments.first();
     const imageUrl = attachment?.url;
+    const contentType = attachment?.contentType || '';
 
     const allowedTypes = {
       sketch: 2,
@@ -32,8 +33,13 @@ export default {
       );
     }
 
-    if (!imageUrl.startsWith('http')) {
-      return message.reply('❌ Attachment must be a valid image.');
+    // Reject non-image file types
+    if (
+      contentType.startsWith('audio/') ||
+      contentType.startsWith('video/') ||
+      contentType === 'application/octet-stream'
+    ) {
+      return message.reply('❌ Only image files are allowed. No audio or video files.');
     }
 
     if (!allowedTags.includes(tag)) {
@@ -84,4 +90,3 @@ export default {
     );
   }
 };
-
