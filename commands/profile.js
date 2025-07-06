@@ -1,5 +1,3 @@
-import { AttachmentBuilder } from 'discord.js';
-
 export default {
   name: 'profile',
   description: 'View your profile or another user’s.',
@@ -19,23 +17,43 @@ export default {
       .reduce((sum, a) => sum + a.points, 0);
 
     const level = Math.floor(totalXP / 20) + 1;
+
     const gallery = user.gallery || [];
-    const recentImages = gallery.slice(-4).map(g => g.imageUrl);
+
+    const attacks = gallery.slice(-4).reverse();
+    const charName = user.characterName || 'Unnamed';
+    const charImage = user.imageUrl;
 
     const embed = {
-      title: `${target.username}'s Character Profile`,
+      title: `${target.username}'s Art Profile`,
       color: 0xff9ecb,
       fields: [
-        { name: '🎭 Name', value: user.characterName, inline: true },
-        { name: '🧠 XP', value: `${totalXP} XP`, inline: true },
-        { name: '⭐ Rank', value: `Level ${level}`, inline: true },
-        { name: '🏳️ Team', value: user.team || 'None', inline: true }
+        {
+          name: '🎭 Character Info',
+          value:
+            `**Name:** ${charName}\n` +
+            `**XP:** ${totalXP}\n` +
+            `**Rank:** Level ${level}\n` +
+            `**Team:** ${user.team || 'None'}`
+        },
+        {
+          name: '🖼️ Registered Character',
+          value: `[View Image](${charImage})` || 'No character image set.'
+        },
+        {
+          name: '🎯 Recent Attacks',
+          value: attacks.length
+            ? attacks.map((a, i) =>
+                `**${i + 1}.** [Art](${a.imageUrl}) • ${a.points} pts • ${a.type}`
+              ).join('\n')
+            : 'No recent attacks.'
+        }
       ],
-      image: recentImages[0] ? { url: recentImages[0] } : undefined,
-      footer: { text: gallery.length ? `🖼️ Showing 1 of ${gallery.length} art submissions` : '' }
+      image: charImage ? { url: charImage } : undefined,
+      footer: { text: `🧑 Showing character info and attack history` }
     };
 
-    await message.channel.send({ embeds: [embed] });
+    message.channel.send({ embeds: [embed] });
   }
 };
 
