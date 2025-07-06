@@ -1,0 +1,13 @@
+{
+  "name": "profic-art-royal-bot",
+  "version": "1.0.0",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.0.0",
+    "lowdb": "^5.0.0"
+  }
+}
