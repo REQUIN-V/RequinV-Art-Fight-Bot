@@ -37,36 +37,43 @@ export default {
       fields: []
     };
 
-    // Characters section
+    // Show registered characters
     if (user.characters && user.characters.length > 0) {
       for (const char of user.characters) {
         embed.fields.push({
           name: `🎭 ${char.name}`,
-          value: char.imageUrl ? `[View Image](${char.imageUrl})` : 'No image provided',
+          value:
+            `${char.imageUrl ? `[View Image](${char.imageUrl})` : 'No image provided'}\n` +
+            `🆔 ID: \`${char.id || 'unassigned'}\``,
           inline: false
         });
       }
     } else if (user.characterName) {
       embed.fields.push({
         name: `🎭 ${user.characterName}`,
-        value: user.imageUrl ? `[View Image](${user.imageUrl})` : 'No image provided',
+        value:
+          `${user.imageUrl ? `[View Image](${user.imageUrl})` : 'No image provided'}\n` +
+          `🆔 ID: \`legacy\``,
         inline: false
       });
     } else {
       embed.fields.push({ name: 'Characters', value: 'No characters registered yet.' });
     }
 
-    // Recent attack gallery section
-    const userAttacks = allAttacks.filter(a => a.from === user.id).slice(-4).reverse(); // Most recent 4
+    // Divider for recent attacks
+    const userAttacks = allAttacks.filter(a => a.from === user.id).slice(-4).reverse(); // latest 4
     if (userAttacks.length > 0) {
       embed.description += `\n\n•┈••✦ ❤ ✦••┈•\n**Recent Attacks:**`;
-      userAttacks.forEach((attack, i) => {
+      for (const attack of userAttacks) {
         embed.fields.push({
-          name: `🎯 Attack #${userAttacks.length - i}`,
-          value: `[View Image](${attack.imageUrl}) – ${attack.type} (${attack.points} pts)${attack.tag ? ` | Tag: ${attack.tag}` : ''}`,
+          name: `🎯 Attack ID: \`${attack.id}\``,
+          value:
+            `[View Art](${attack.imageUrl}) – ${attack.type} (${attack.points} pts)` +
+            `${attack.tag ? ` | Tag: ${attack.tag}` : ''}` +
+            `${attack.description ? `\n📝 ${attack.description}` : ''}`,
           inline: false
         });
-      });
+      }
     }
 
     await message.channel.send({ embeds: [embed] });
