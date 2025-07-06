@@ -12,7 +12,7 @@ export default {
       { name: '!register-character <name>', desc: 'Register your character' },
       { name: '!join-team <TeamName>', desc: 'Join a team (after registering)' },
       {
-        name: '!attack @user <type> <image_url> [desc]',
+        name: '!attack @user <type> <image_url> <tag> [description]',
         desc:
           `Submit an attack with art.\n` +
           `**Point Types:**\n` +
@@ -20,7 +20,8 @@ export default {
           `• basic — 5 pts\n` +
           `• full-render — 10 pts\n` +
           `• animation — 15 pts\n` +
-          `• wip — 1 pt`
+          `• wip — 1 pt\n\n` +
+          `**Tags (required):** \`sfw\`, \`nsfw\`, \`gore\`, \`18+\`, \`spoiler\``
       },
       { name: '!profile [@user]', desc: 'View your (or another user\'s) profile' },
       { name: '!scoreboard', desc: 'View the current team points' },
@@ -59,3 +60,4 @@ export default {
     message.channel.send({ embeds: [embed] });
   }
 };
+
