@@ -1,6 +1,6 @@
 export default {
   name: 'attack',
-  description: 'Submit an attack with image and type. Usage: !attack @user type image_url [optional description]',
+  description: 'Submit an attack with image, type, and tag. Usage: !attack @user type image_url tag [optional description]',
   async execute(message, args) {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
@@ -9,7 +9,8 @@ export default {
     const mention = message.mentions.users.first();
     const type = args[1]?.toLowerCase();
     const imageUrl = args[2];
-    const description = args.slice(3).join(' ') || '';
+    const tag = args[3]?.toLowerCase();
+    const description = args.slice(4).join(' ') || '';
 
     const allowedTypes = {
       sketch: 2,
@@ -19,15 +20,23 @@ export default {
       wip: 1
     };
 
-    if (!mention || !allowedTypes[type] || !imageUrl) {
+    const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
+
+    // Validate input
+    if (!mention || !allowedTypes[type] || !imageUrl || !tag) {
       return message.reply(
-        `❌ Usage: !attack @user <type> <image_url> [optional description]\n` +
-        `Valid types: ${Object.keys(allowedTypes).join(', ')}`
+        `❌ Usage: !attack @user <type> <image_url> <tag> [optional description]\n` +
+        `Valid types: ${Object.keys(allowedTypes).join(', ')}\n` +
+        `Valid tags: ${allowedTags.join(', ')}`
       );
     }
 
     if (!imageUrl.startsWith('http')) {
       return message.reply('❌ Please provide a valid image URL.');
+    }
+
+    if (!allowedTags.includes(tag)) {
+      return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
     }
 
     const attacker = db.data.users.find(user => user.id === author);
@@ -44,8 +53,10 @@ export default {
       to: mention.id,
       type,
       imageUrl,
+      tag,
       points,
-      description
+      description,
+      timestamp: new Date().toISOString()
     };
 
     db.data.attacks.push(attack);
@@ -53,8 +64,11 @@ export default {
 
     message.channel.send(
       `🎯 ${message.author.username} attacked ${mention.username} for **${points} points**!\n` +
-      `🖼️ Type: ${type} | [Art Link](${imageUrl})\n` +
-      `${description ? `📝 Description: ${description}` : ''}`
+      `🎨 Type: ${type} (${points} pts)\n` +
+      `🏷️ Tag: \`${tag}\`\n` +
+      `🖼️ [Art Link](${imageUrl})\n` +
+      (description ? `📝 ${description}` : '')
     );
   }
 };
+
