@@ -21,6 +21,7 @@ export default {
           `**Tags:** \`sfw\`, \`nsfw\`, \`gore\`, \`18+\`, \`spoiler\`\n` +
           `⏳ Cooldown: 5 minutes\n🆔 Each attack has a unique ID`
       },
+      { name: '!delete-attack [ID]', desc: 'Deletes your art attack entry, use ID to delete a specific art attack' },
       { name: '!profile [@user]', desc: 'View your or another user’s full profile, characters, and attacks' },
       { name: '!my-attacks', desc: 'List your submitted attacks' },
       { name: '!scoreboard', desc: 'View current live team scores' },
