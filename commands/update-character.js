@@ -12,11 +12,12 @@ export default {
       return message.reply('❌ Usage: !update-character <id> [new name] (attach new image)');
     }
 
-    const newName = args.slice(1).join(' ');
+    const newName = args.slice(1).join(' ').trim();
     const attachment = message.attachments.first();
     const contentType = attachment?.contentType || '';
     const imageUrl = attachment?.url;
 
+    // Reject non-image content types
     if (
       attachment &&
       (contentType.startsWith('audio/') ||
@@ -26,25 +27,28 @@ export default {
       return message.reply('❌ Only image files are allowed. No audio or video files.');
     }
 
+    // Find the user and their character list
     const user = db.data.users.find(u => u.id === userId);
-    if (!user || !user.characters) {
-      return message.reply('❌ You don’t have any characters registered.');
+    if (!user || !user.characters || user.characters.length === 0) {
+      return message.reply('❌ You don’t have any registered characters.');
     }
 
-    const char = user.characters.find(c => c.id === charId);
-    if (!char) {
+    // Find the specific character by ID
+    const character = user.characters.find(c => String(c.id) === String(charId));
+    if (!character) {
       return message.reply(`❌ Character with ID \`${charId}\` not found.`);
     }
 
     if (!newName && !imageUrl) {
-      return message.reply('❌ Provide a new name, new image, or both to update.');
+      return message.reply('❌ You must provide a new name, new image, or both to update.');
     }
 
-    if (newName) char.name = newName;
-    if (imageUrl) char.imageUrl = imageUrl;
+    if (newName) character.name = newName;
+    if (imageUrl) character.imageUrl = imageUrl;
 
     await db.write();
 
-    message.channel.send(`✅ Character \`${charId}\` updated successfully.`);
+    message.channel.send(`✅ Character \`${charId}\` updated successfully!`);
   }
 };
+
