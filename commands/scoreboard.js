@@ -7,6 +7,8 @@ export default {
 
     const attacks = db.data.attacks || [];
     const users = db.data.users || [];
+    const settings = db.data.settings || {};
+    const teams = settings.teams || [];
 
     const teamScores = {};
 
@@ -22,15 +24,22 @@ export default {
     }
 
     if (Object.keys(teamScores).length === 0) {
-      return message.reply('📉 No scores yet.');
+      return message.reply('📉 No team scores have been recorded yet.');
     }
 
     const sorted = Object.entries(teamScores)
       .sort((a, b) => b[1] - a[1])
-      .map(([team, score], index) => `${index + 1}. **${team}** – ${score} points`);
+      .map(([team, score], index) => `**${index + 1}. ${team}** – ${score} pts`);
 
-    message.channel.send({
-      content: `📊 **Current Scoreboard**\n\n${sorted.join('\n')}`
-    });
+    const embed = {
+      title: '📊 Current Team Scoreboard',
+      color: 0xff9ecb,
+      description: sorted.join('\n'),
+      footer: {
+        text: 'Updated live as attacks are submitted'
+      }
+    };
+
+    message.channel.send({ embeds: [embed] });
   }
 };
