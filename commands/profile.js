@@ -37,6 +37,7 @@ export default {
       fields: []
     };
 
+    // Characters section
     if (user.characters && user.characters.length > 0) {
       for (const char of user.characters) {
         embed.fields.push({
@@ -53,6 +54,19 @@ export default {
       });
     } else {
       embed.fields.push({ name: 'Characters', value: 'No characters registered yet.' });
+    }
+
+    // Recent attack gallery section
+    const userAttacks = allAttacks.filter(a => a.from === user.id).slice(-4).reverse(); // Most recent 4
+    if (userAttacks.length > 0) {
+      embed.description += `\n\n•┈••✦ ❤ ✦••┈•\n**Recent Attacks:**`;
+      userAttacks.forEach((attack, i) => {
+        embed.fields.push({
+          name: `🎯 Attack #${userAttacks.length - i}`,
+          value: `[View Image](${attack.imageUrl}) – ${attack.type} (${attack.points} pts)${attack.tag ? ` | Tag: ${attack.tag}` : ''}`,
+          inline: false
+        });
+      });
     }
 
     await message.channel.send({ embeds: [embed] });
