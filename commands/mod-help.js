@@ -10,7 +10,7 @@ export default {
       { name: '!set-theme <name>', desc: 'Set or update the current seasonal theme' },
       { name: '!set-event-teams <TeamA> <TeamB>', desc: 'Set current event teams' },
       { name: '!assign-team @user <Team>', desc: 'Assign a user to a team manually' },
-      { name: '!delete-attack <attackID>', desc: 'Delete an attack using its ID' },
+      { name: '!delete-attack-mod <attackID>', desc: 'Delete an attack using its ID but done for moderation to avoid illegal materials being shared around' },
       { name: '!set-log-channel', desc: 'Set the current channel to log attacks' }
     ];
 
@@ -32,3 +32,4 @@ export default {
     await message.channel.send({ embeds: [embed] });
   }
 };
+
