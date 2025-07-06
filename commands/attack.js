@@ -1,17 +1,22 @@
-const cooldown = new Map(); // Store cooldowns per user
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
+const cooldown = new Map();
 
 export default {
   name: 'attack',
-  description: 'Submit an attack with an image attachment, type, and tag. Usage: !attack @user <type> <tag> [optional description]',
+  description: 'Submit an attack. Usage: !attack @user <type> <tag> [description] (attach image)',
   async execute(message, args) {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
     const authorId = message.author.id;
     const mention = message.mentions.users.first();
-    const type = args[1]?.toLowerCase();
-    const tag = args[2]?.toLowerCase();
-    const description = args.slice(3).join(' ') || '';
+    if (!mention) return message.reply('❌ Usage: !attack @user <type> <tag> [description] (attach image)');
+    args.shift(); // Remove @mention
+
+    const type = args[0]?.toLowerCase();
+    const tag = args[1]?.toLowerCase();
+    const description = args.slice(2).join(' ') || '';
     const attachment = message.attachments.first();
     const imageUrl = attachment?.url;
     const contentType = attachment?.contentType || '';
@@ -23,14 +28,13 @@ export default {
       animation: 15,
       wip: 1
     };
-
     const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
 
-    if (!mention || !allowedTypes[type] || !tag || !imageUrl) {
+    if (!allowedTypes[type] || !tag || !imageUrl) {
       return message.reply(
-        `❌ Usage: !attack @user <type> <tag> [optional description] (attach image)\n` +
-        `Valid types: ${Object.keys(allowedTypes).join(', ')}\n` +
-        `Valid tags: ${allowedTags.join(', ')}`
+        `❌ Usage: !attack @user <type> <tag> [description] (attach image)\n` +
+        `**Valid Types:** ${Object.keys(allowedTypes).join(', ')}\n` +
+        `**Valid Tags:** ${allowedTags.join(', ')}`
       );
     }
 
@@ -38,29 +42,18 @@ export default {
       contentType.startsWith('audio/') ||
       contentType.startsWith('video/') ||
       contentType === 'application/octet-stream'
-    ) {
-      return message.reply('❌ Only image files are allowed. No audio or video files.');
-    }
+    ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
-    if (!allowedTags.includes(tag)) {
-      return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
-    }
+    if (!allowedTags.includes(tag)) return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
 
-    const attacker = db.data.users.find(user => user.id === authorId);
-    const target = db.data.users.find(user => user.id === mention.id);
+    const attacker = db.data.users.find(u => u.id === authorId);
+    const target = db.data.users.find(u => u.id === mention.id);
+    if (!attacker || !target) return message.reply('❌ Either you or the target hasn’t registered a character yet.');
 
-    if (!attacker || !target) {
-      return message.reply('❌ Either you or the target hasn’t registered a character yet.');
-    }
-
-    // 🆔 Duplicate Prevention
     const isDuplicate = (db.data.attacks || []).some(a => a.from === authorId && a.imageUrl === imageUrl);
-    if (isDuplicate) {
-      return message.reply('⚠️ You already submitted this image before.');
-    }
+    if (isDuplicate) return message.reply('⚠️ You already submitted this image before.');
 
-    // ⏱️ 5-Minute Cooldown
-    const cooldownTime = 300_000; // 5 minutes in milliseconds
+    const cooldownTime = 300_000;
     const now = Date.now();
     if (cooldown.has(authorId) && now - cooldown.get(authorId) < cooldownTime) {
       const remaining = ((cooldownTime - (now - cooldown.get(authorId))) / 1000 / 60).toFixed(1);
@@ -69,8 +62,7 @@ export default {
     cooldown.set(authorId, now);
 
     const points = allowedTypes[type];
-    const attackId = Date.now(); // Used as unique ID
-
+    const attackId = Date.now();
     const attack = {
       id: attackId,
       from: authorId,
@@ -84,7 +76,6 @@ export default {
     };
 
     db.data.attacks.push(attack);
-
     attacker.gallery = attacker.gallery || [];
     attacker.gallery.push({
       imageUrl,
@@ -110,7 +101,26 @@ export default {
       footer: { text: 'Use the Attack ID if you want to delete or report it.' }
     };
 
-    message.channel.send({ embeds: [embed] });
+    await message.channel.send({ embeds: [embed] });
+
+    // 🔒 Log to mod channel with action buttons
+    const logChannelId = db.data.settings?.logChannel;
+    if (logChannelId) {
+      const logChannel = message.guild.channels.cache.get(logChannelId);
+      if (logChannel && logChannel.isTextBased()) {
+        const actionRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`deleteAttack:${attackId}`)
+            .setLabel('🗑️ Delete')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId(`reportAttack:${attackId}`)
+            .setLabel('🚩 Report')
+            .setStyle(ButtonStyle.Secondary)
+        );
+
+        logChannel.send({ embeds: [embed], components: [actionRow] });
+      }
+    }
   }
 };
-
