@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export default {
   name: 'register-character',
   description: 'Register your character with a name and image attachment.',
@@ -24,24 +26,41 @@ export default {
     }
 
     const imageUrl = attachment.url;
+    const userId = message.author.id;
+    const charId = `${Date.now().toString(36)}-${crypto.randomBytes(2).toString('hex')}`;
 
-    const existing = db.data.users.find(u => u.id === message.author.id);
-    if (existing) {
-      return message.reply('❌ You already registered a character.');
+    let user = db.data.users.find(u => u.id === userId);
+
+    const newCharacter = {
+      id: charId,
+      name,
+      imageUrl
+    };
+
+    if (user) {
+      user.characters = user.characters || [];
+
+      // Prevent duplicates with same name or exact image
+      const dupe = user.characters.find(c => c.name === name && c.imageUrl === imageUrl);
+      if (dupe) {
+        return message.reply('❌ You already registered this character.');
+      }
+
+      user.characters.push(newCharacter);
+    } else {
+      db.data.users.push({
+        id: userId,
+        characters: [newCharacter],
+        gallery: [],
+        team: null
+      });
     }
-
-    db.data.users.push({
-      id: message.author.id,
-      characterName: name,
-      imageUrl,
-      gallery: [],
-      team: null
-    });
 
     await db.write();
 
-    message.channel.send(`✅ Character **${name}** registered successfully!`);
+    message.channel.send(
+      `✅ Character **${name}** registered successfully!\n🆔 Character ID: \`${charId}\``
+    );
   }
 };
-
 
