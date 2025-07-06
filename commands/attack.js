@@ -1,4 +1,4 @@
-const cooldown = new Map(); // Store cooldowns
+const cooldown = new Map(); // Store cooldowns per user
 
 export default {
   name: 'attack',
@@ -26,7 +26,6 @@ export default {
 
     const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
 
-    // ✅ Input validation
     if (!mention || !allowedTypes[type] || !tag || !imageUrl) {
       return message.reply(
         `❌ Usage: !attack @user <type> <tag> [optional description] (attach image)\n` +
@@ -54,18 +53,18 @@ export default {
       return message.reply('❌ Either you or the target hasn’t registered a character yet.');
     }
 
-    // 🔁 Duplicate image prevention
+    // 🆔 Duplicate Prevention
     const isDuplicate = (db.data.attacks || []).some(a => a.from === authorId && a.imageUrl === imageUrl);
     if (isDuplicate) {
       return message.reply('⚠️ You already submitted this image before.');
     }
 
-    // 🕒 Cooldown (e.g. 10 seconds)
-    const cooldownTime = 10_000;
+    // ⏱️ 5-Minute Cooldown
+    const cooldownTime = 300_000; // 5 minutes in milliseconds
     const now = Date.now();
     if (cooldown.has(authorId) && now - cooldown.get(authorId) < cooldownTime) {
-      const remaining = ((cooldownTime - (now - cooldown.get(authorId))) / 1000).toFixed(1);
-      return message.reply(`⏳ Please wait ${remaining}s before submitting another attack.`);
+      const remaining = ((cooldownTime - (now - cooldown.get(authorId))) / 1000 / 60).toFixed(1);
+      return message.reply(`⏳ Please wait ${remaining} more minute(s) before submitting another attack.`);
     }
     cooldown.set(authorId, now);
 
@@ -86,7 +85,6 @@ export default {
 
     db.data.attacks.push(attack);
 
-    // 📂 Store in attacker's gallery
     attacker.gallery = attacker.gallery || [];
     attacker.gallery.push({
       imageUrl,
@@ -99,7 +97,6 @@ export default {
 
     await db.write();
 
-    // 📤 Preview Embed
     const embed = {
       title: `🎯 Attack by ${message.author.username}`,
       description:
@@ -116,3 +113,4 @@ export default {
     message.channel.send({ embeds: [embed] });
   }
 };
+
