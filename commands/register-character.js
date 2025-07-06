@@ -6,18 +6,20 @@ export default {
     await db.read();
 
     const name = args.join(' ').trim();
-    const image = message.attachments.first();
+    const attachment = message.attachments.first();
 
-    if (!name || !image) {
+    if (!name || !attachment) {
       return message.reply('❌ Usage: !register-character <name> (with image attachment)');
     }
 
-    const imageUrl = image.url;
-    if (!/\.(png|jpe?g|gif)$/i.test(imageUrl)) {
-      return message.reply('❌ Please attach a valid image file (.png, .jpg, or .gif).');
+    const validTypes = ['image/png', 'image/jpeg', 'image/gif'];
+
+    if (!validTypes.includes(attachment.contentType)) {
+      return message.reply('❌ The file must be a PNG, JPG, or GIF.');
     }
 
-    // Prevent double register
+    const imageUrl = attachment.url;
+
     const existing = db.data.users.find(u => u.id === message.author.id);
     if (existing) {
       return message.reply('❌ You already registered a character.');
@@ -32,6 +34,11 @@ export default {
     });
 
     await db.write();
+
+    message.channel.send(`✅ Character **${name}** registered successfully!`);
+  }
+};
+
 
     message.channel.send(`✅ Character **${name}** registered successfully!`);
   }
