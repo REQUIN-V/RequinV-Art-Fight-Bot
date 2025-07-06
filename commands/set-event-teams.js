@@ -7,17 +7,20 @@ export default {
     }
 
     if (args.length < 2) {
-      return message.reply('Usage: !set-event-teams TeamA TeamB');
+      return message.reply('❌ Usage: !set-event-teams TeamA TeamB');
     }
 
-    const teamA = args[0];
-    const teamB = args[1];
+    const [teamA, teamB] = args;
 
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    db.data.teams = {
+      teamA,
+      teamB
+    };
+
     db.data.settings = db.data.settings || {};
-    db.data.settings.teams = [teamA, teamB];
     db.data.settings.currentEvent = `${teamA} vs ${teamB}`;
 
     await db.write();
