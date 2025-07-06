@@ -11,7 +11,17 @@ export default {
       { name: '!help', desc: 'Show this help menu' },
       { name: '!register-character <name>', desc: 'Register your character' },
       { name: '!join-team <TeamName>', desc: 'Join a team (after registering)' },
-      { name: '!attack @user <type> <image_url> [desc]', desc: 'Submit an attack with art' },
+      {
+        name: '!attack @user <type> <image_url> [desc]',
+        desc:
+          `Submit an attack with art.\n` +
+          `**Point Types:**\n` +
+          `• sketch — 2 pts\n` +
+          `• basic — 5 pts\n` +
+          `• full-render — 10 pts\n` +
+          `• animation — 15 pts\n` +
+          `• wip — 1 pt`
+      },
       { name: '!profile [@user]', desc: 'View your (or another user\'s) profile' },
       { name: '!scoreboard', desc: 'View the current team points' },
       { name: '!my-attacks', desc: 'List your recent attacks' },
@@ -32,7 +42,7 @@ export default {
       fields: [
         {
           name: '👤 General Commands',
-          value: commands.map(cmd => `**${cmd.name}** – ${cmd.desc}`).join('\n')
+          value: commands.map(cmd => `**${cmd.name}** – ${cmd.desc}`).join('\n\n')
         },
         {
           name: '🛠️ Moderator Commands',
