@@ -40,7 +40,3 @@ export default {
 };
 
 
-    message.channel.send(`✅ Character **${name}** registered successfully!`);
-  }
-};
-
