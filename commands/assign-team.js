@@ -16,6 +16,11 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const validTeams = db.data.settings?.teams;
+    if (!validTeams || !validTeams.includes(team)) {
+      return message.reply(`❌ Team "${team}" is not a valid current team. Ask a mod to check \`!team-info\`.`);
+    }
+
     const userData = db.data.users.find(user => user.id === mention.id);
     if (!userData) {
       return message.reply('❌ That user has not registered a character yet.');
@@ -27,3 +32,4 @@ export default {
     message.channel.send(`✅ ${mention.username} has been assigned to **${team}**.`);
   }
 };
+
