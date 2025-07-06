@@ -1,3 +1,5 @@
+const cooldown = new Map(); // Store cooldowns
+
 export default {
   name: 'attack',
   description: 'Submit an attack with an image attachment, type, and tag. Usage: !attack @user <type> <tag> [optional description]',
@@ -5,12 +7,11 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
-    const author = message.author.id;
+    const authorId = message.author.id;
     const mention = message.mentions.users.first();
     const type = args[1]?.toLowerCase();
     const tag = args[2]?.toLowerCase();
     const description = args.slice(3).join(' ') || '';
-
     const attachment = message.attachments.first();
     const imageUrl = attachment?.url;
     const contentType = attachment?.contentType || '';
@@ -25,6 +26,7 @@ export default {
 
     const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
 
+    // ✅ Input validation
     if (!mention || !allowedTypes[type] || !tag || !imageUrl) {
       return message.reply(
         `❌ Usage: !attack @user <type> <tag> [optional description] (attach image)\n` +
@@ -33,7 +35,6 @@ export default {
       );
     }
 
-    // Reject non-image file types
     if (
       contentType.startsWith('audio/') ||
       contentType.startsWith('video/') ||
@@ -46,17 +47,34 @@ export default {
       return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
     }
 
-    const attacker = db.data.users.find(user => user.id === author);
+    const attacker = db.data.users.find(user => user.id === authorId);
     const target = db.data.users.find(user => user.id === mention.id);
 
     if (!attacker || !target) {
       return message.reply('❌ Either you or the target hasn’t registered a character yet.');
     }
 
+    // 🔁 Duplicate image prevention
+    const isDuplicate = (db.data.attacks || []).some(a => a.from === authorId && a.imageUrl === imageUrl);
+    if (isDuplicate) {
+      return message.reply('⚠️ You already submitted this image before.');
+    }
+
+    // 🕒 Cooldown (e.g. 10 seconds)
+    const cooldownTime = 10_000;
+    const now = Date.now();
+    if (cooldown.has(authorId) && now - cooldown.get(authorId) < cooldownTime) {
+      const remaining = ((cooldownTime - (now - cooldown.get(authorId))) / 1000).toFixed(1);
+      return message.reply(`⏳ Please wait ${remaining}s before submitting another attack.`);
+    }
+    cooldown.set(authorId, now);
+
     const points = allowedTypes[type];
+    const attackId = Date.now(); // Used as unique ID
+
     const attack = {
-      id: Date.now(),
-      from: author,
+      id: attackId,
+      from: authorId,
       to: mention.id,
       type,
       tag,
@@ -68,7 +86,7 @@ export default {
 
     db.data.attacks.push(attack);
 
-    // Store image in attacker's gallery
+    // 📂 Store in attacker's gallery
     attacker.gallery = attacker.gallery || [];
     attacker.gallery.push({
       imageUrl,
@@ -81,12 +99,20 @@ export default {
 
     await db.write();
 
-    message.channel.send(
-      `🎯 ${message.author.username} attacked ${mention.username} for **${points} points**!\n` +
-      `🎨 Type: ${type} (${points} pts)\n` +
-      `🏷️ Tag: \`${tag}\`\n` +
-      `🖼️ [View Art](${imageUrl})\n` +
-      (description ? `📝 ${description}` : '')
-    );
+    // 📤 Preview Embed
+    const embed = {
+      title: `🎯 Attack by ${message.author.username}`,
+      description:
+        `Attacked ${mention.username} for **${points} points**\n` +
+        `🎨 **Type:** ${type}\n` +
+        `🏷️ **Tag:** ${tag}\n` +
+        (description ? `📝 ${description}\n` : '') +
+        `🆔 Attack ID: \`${attackId}\``,
+      color: 0xff9ecb,
+      image: { url: imageUrl },
+      footer: { text: 'Use the Attack ID if you want to delete or report it.' }
+    };
+
+    message.channel.send({ embeds: [embed] });
   }
 };
