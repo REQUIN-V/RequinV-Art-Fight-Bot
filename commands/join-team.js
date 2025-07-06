@@ -6,10 +6,10 @@ export default {
     await db.read();
 
     const userId = message.author.id;
-    const teamName = args.join(' ');
+    const teamName = args.join(' ').trim();
 
     if (!teamName) {
-      return message.reply('Usage: !join-team <TeamName>');
+      return message.reply('❌ Usage: !join-team <TeamName>');
     }
 
     const user = db.data.users.find(u => u.id === userId);
@@ -17,9 +17,13 @@ export default {
       return message.reply('❌ You must register your character before joining a team.');
     }
 
-    const currentEvent = db.data.settings.currentEvent;
-    if (!currentEvent || !db.data.settings.teams || !db.data.settings.teams.includes(teamName)) {
-      return message.reply(`❌ Team "${teamName}" is not available. Ask a mod for the valid team names.`);
+    const teams = db.data.teams || {};
+    const validTeams = Object.values(teams);
+
+    if (!validTeams.includes(teamName)) {
+      return message.reply(
+        `❌ Team "${teamName}" is not available.\nValid teams: ${validTeams.join(' or ')}`
+      );
     }
 
     user.team = teamName;
@@ -28,3 +32,4 @@ export default {
     message.channel.send(`🎉 ${message.author.username} has joined **${teamName}**!`);
   }
 };
+
