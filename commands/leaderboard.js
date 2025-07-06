@@ -7,8 +7,9 @@ export default {
 
     const attacks = db.data.attacks || [];
     const users = db.data.users || [];
+    const settings = db.data.settings || {};
+    const teams = settings.teams || [];
 
-    // Sum up team points
     const teamScores = {};
 
     for (const attack of attacks) {
@@ -26,13 +27,20 @@ export default {
       return message.reply('📉 No team scores yet.');
     }
 
-    // Sort scores
     const sorted = Object.entries(teamScores)
       .sort((a, b) => b[1] - a[1])
-      .map(([team, score], index) => `${index + 1}. **${team}** – ${score} points`);
+      .map(([team, score], index) => `**${index + 1}. ${team}** — ${score} pts`);
 
-    message.channel.send({
-      content: `📊 **Team Leaderboard**\n\n${sorted.join('\n')}`
-    });
+    const embed = {
+      title: '🏆 Team Leaderboard',
+      color: 0xff9ecb,
+      description: sorted.join('\n'),
+      footer: {
+        text: 'Based on total attack points from all team members.'
+      }
+    };
+
+    message.channel.send({ embeds: [embed] });
   }
 };
+
