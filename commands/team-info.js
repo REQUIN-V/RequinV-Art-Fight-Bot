@@ -5,7 +5,7 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
-    const theme = db.data.theme || 'No theme set yet.';
+    const theme = db.data.settings?.theme || 'No theme set yet.';
     const teams = db.data.teams || { teamA: 'Team A', teamB: 'Team B' };
 
     const embed = {
