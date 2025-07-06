@@ -26,6 +26,10 @@ export default {
       );
     }
 
+    if (user.team) {
+      return message.reply(`🚫 You’ve already joined **${user.team}**. Team changes are locked for this event.`);
+    }
+
     user.team = teamName;
     await db.write();
 
