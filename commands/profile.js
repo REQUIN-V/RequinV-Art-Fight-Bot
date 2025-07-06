@@ -27,7 +27,13 @@ export default {
     const embed = {
       title: `${target.username}'s Profile`,
       color: 0xff9ecb,
-      description: `**Team:** ${teamName}\n**Attack Points:** ${attackPoints}\n**Defend Points:** ${defendPoints}\n**Team Contribution:** ${attackPoints} pts`,
+      description:
+        `**Team:** ${teamName}\n` +
+        `**Attack Points:** ${attackPoints}\n` +
+        `**Defend Points:** ${defendPoints}\n` +
+        `**Team Contribution:** ${attackPoints} pts\n\n` +
+        `•┈••✦ ❤ ✦••┈•\n` +
+        `**User's Characters:**`,
       fields: []
     };
 
@@ -52,4 +58,3 @@ export default {
     await message.channel.send({ embeds: [embed] });
   }
 };
-
