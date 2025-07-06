@@ -12,10 +12,15 @@ export default {
       return message.reply('❌ Usage: !register-character <name> (with image attachment)');
     }
 
-    const validTypes = ['image/png', 'image/jpeg', 'image/gif'];
+    const contentType = attachment.contentType || '';
 
-    if (!validTypes.includes(attachment.contentType)) {
-      return message.reply('❌ The file must be a PNG, JPG, or GIF.');
+    // Reject non-image file types (audio/video/binary)
+    if (
+      contentType.startsWith('audio/') ||
+      contentType.startsWith('video/') ||
+      contentType === 'application/octet-stream'
+    ) {
+      return message.reply('❌ Only image files are allowed. No audio or video files.');
     }
 
     const imageUrl = attachment.url;
