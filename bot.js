@@ -1,9 +1,8 @@
 import './ping.js';
-import { Client, GatewayIntentBits, Collection } from 'discord.js';
+import { Client, GatewayIntentBits, Collection, Events } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getDB } from './utils/db.js';
 
 const config = {
   token: process.env.DISCORD_TOKEN,
@@ -16,20 +15,24 @@ const client = new Client({
 
 client.commands = new Collection();
 
+// Resolve current directory path
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
+// Only load commands once
 for (const file of commandFiles) {
   const command = await import(`./commands/${file}`);
   client.commands.set(command.default.name, command.default);
 }
 
-client.on('ready', () => {
-  console.log(`🤖 Bot logged in as ${client.user.tag}`);
+// Use Events.Ready for best practice
+client.once(Events.ClientReady, () => {
+  console.log(`🤖 Bot is ready as ${client.user.tag}`);
 });
 
-client.on('messageCreate', async message => {
+// Handle messages
+client.on(Events.MessageCreate, async message => {
   if (!message.content.startsWith(config.prefix) || message.author.bot) return;
 
   const args = message.content.slice(config.prefix.length).trim().split(/ +/);
@@ -42,8 +45,12 @@ client.on('messageCreate', async message => {
     await command.execute(message, args);
   } catch (error) {
     console.error(error);
-    message.reply('❌ There was an error executing that command.');
+    if (!message.replied && !message.deferred) {
+      message.reply('❌ There was an error executing that command.');
+    }
   }
 });
 
+// Make sure you're only running ONE bot instance
 client.login(config.token);
+
