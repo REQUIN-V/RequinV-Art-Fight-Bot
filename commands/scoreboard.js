@@ -42,6 +42,11 @@ export default {
       }
     };
 
+    // Add scoreboard banner if one exists
+    if (settings.sharedScoreboardBanner) {
+      embed.image = { url: settings.sharedScoreboardBanner };
+    }
+
     message.channel.send({ embeds: [embed] });
   }
 };
