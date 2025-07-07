@@ -1,3 +1,5 @@
+import { getDB } from '../utils/db.js';
+
 export default {
   name: 'set-event-teams',
   description: 'Set team names for the current event (mod-only). Usage: !set-event-teams TeamA TeamB',
@@ -11,17 +13,23 @@ export default {
     }
 
     const [teamA, teamB] = args;
+    const guildId = message.guild.id;
 
-    const db = (await import('../utils/db.js')).getDB();
+    const db = getDB();
     await db.read();
 
-    db.data.teams = {
-      teamA,
-      teamB
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      attacks: [],
+      defends: [],
+      settings: {},
+      teams: []
     };
 
-    db.data.settings = db.data.settings || {};
-    db.data.settings.currentEvent = `${teamA} vs ${teamB}`;
+    const server = db.data.servers[guildId];
+    server.teams = [teamA, teamB];
+    server.settings.currentEvent = `${teamA} vs ${teamB}`;
 
     await db.write();
 
