@@ -15,10 +15,14 @@ export default {
 
     const teamScores = {};
 
+    // Initialize team scores
+    for (const team of teams) {
+      teamScores[team] = 0;
+    }
+
     // Tally attack + defend points per team
     for (const user of users) {
-      if (!user.team) continue;
-      const team = user.team;
+      if (!user.team || !teamScores.hasOwnProperty(user.team)) continue;
 
       const attackPoints = attacks
         .filter(a => a.from === user.id)
@@ -28,11 +32,10 @@ export default {
         .filter(d => d.from === user.id)
         .reduce((sum, d) => sum + d.points, 0);
 
-      if (!teamScores[team]) teamScores[team] = 0;
-      teamScores[team] += attackPoints + defendPoints;
+      teamScores[user.team] += attackPoints + defendPoints;
     }
 
-    const [teamA, teamB] = Object.keys(teamScores);
+    const [teamA = 'Team A', teamB = 'Team B'] = teams;
     const scoreA = teamScores[teamA] || 0;
     const scoreB = teamScores[teamB] || 0;
     const total = scoreA + scoreB;
@@ -55,11 +58,11 @@ export default {
       title: '📊 Live Team Scoreboard',
       color: 0xff9ecb,
       description:
-        `🏳️ **${teamA || 'Team A'}** — ${scoreA} pts\n` +
-        `🏳️ **${teamB || 'Team B'}** — ${scoreB} pts\n\n` +
+        `🏳️ **${teamA}** — ${scoreA} pts\n` +
+        `🏳️ **${teamB}** — ${scoreB} pts\n\n` +
         bar + `\n\n` +
-        `⬜ ${teamA || 'Team A'} — ${percentA.toFixed(1)}%\n` +
-        `🩷 ${teamB || 'Team B'} — ${percentB.toFixed(1)}%`,
+        `⬜ ${teamA} — ${percentA.toFixed(1)}%\n` +
+        `🩷 ${teamB} — ${percentB.toFixed(1)}%`,
       footer: { text: 'Updated live as attacks/defenses are submitted.' }
     };
 
