@@ -7,6 +7,7 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const guildId = message.guild.id;
     const name = args.join(' ').trim();
     const attachment = message.attachments.first();
 
@@ -16,7 +17,7 @@ export default {
 
     const contentType = attachment.contentType || '';
 
-    // Reject non-image file types (audio/video/binary)
+    // Reject non-image file types
     if (
       contentType.startsWith('audio/') ||
       contentType.startsWith('video/') ||
@@ -29,7 +30,18 @@ export default {
     const userId = message.author.id;
     const charId = `${Date.now().toString(36)}-${crypto.randomBytes(2).toString('hex')}`;
 
-    let user = db.data.users.find(u => u.id === userId);
+    // 🔧 Initialize server-specific data
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      teams: {},
+      settings: {},
+      attacks: [],
+      defends: []
+    };
+
+    const server = db.data.servers[guildId];
+    let user = server.users.find(u => u.id === userId);
 
     const newCharacter = {
       id: charId,
@@ -40,7 +52,7 @@ export default {
     if (user) {
       user.characters = user.characters || [];
 
-      // Prevent duplicates with same name or exact image
+      // Prevent duplicate characters
       const dupe = user.characters.find(c => c.name === name && c.imageUrl === imageUrl);
       if (dupe) {
         return message.reply('❌ You already registered this character.');
@@ -48,7 +60,7 @@ export default {
 
       user.characters.push(newCharacter);
     } else {
-      db.data.users.push({
+      server.users.push({
         id: userId,
         characters: [newCharacter],
         gallery: [],
@@ -63,4 +75,5 @@ export default {
     );
   }
 };
+
 
