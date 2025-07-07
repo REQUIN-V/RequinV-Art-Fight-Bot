@@ -40,10 +40,15 @@ export default {
     // Progress bar generation
     const percentA = total === 0 ? 50 : (scoreA / total) * 100;
     const percentB = 100 - percentA;
+
     const totalBars = 20;
     const barsA = Math.round((percentA / 100) * totalBars);
     const barsB = totalBars - barsA;
-    const bar = '`' + '█'.repeat(barsA) + '▏' + '█'.repeat(barsB) + '`';
+
+    const whiteBlock = '⬜'; // Team A
+    const pinkBlock = '🩷'; // Team B
+
+    const bar = whiteBlock.repeat(barsA) + pinkBlock.repeat(barsB);
 
     // Embed construction
     const embed = {
@@ -53,8 +58,8 @@ export default {
         `🏳️ **${teamA || 'Team A'}** — ${scoreA} pts\n` +
         `🏳️ **${teamB || 'Team B'}** — ${scoreB} pts\n\n` +
         bar + `\n\n` +
-        `🔴 ${teamA || 'Team A'} — ${percentA.toFixed(1)}%\n` +
-        `🔵 ${teamB || 'Team B'} — ${percentB.toFixed(1)}%`,
+        `⬜ ${teamA || 'Team A'} — ${percentA.toFixed(1)}%\n` +
+        `🩷 ${teamB || 'Team B'} — ${percentB.toFixed(1)}%`,
       footer: { text: 'Updated live as attacks/defenses are submitted.' }
     };
 
