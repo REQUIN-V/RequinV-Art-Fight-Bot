@@ -6,19 +6,30 @@ export default {
     await db.read();
 
     const userId = message.author.id;
+    const guildId = message.guild.id;
     const charId = args[0]?.trim();
 
     if (!charId) {
       return message.reply('❌ Usage: !delete-character <characterID>');
     }
 
-    // Find the user entry
-    const user = db.data.users.find(u => u.id === userId);
+    // Ensure server data exists
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
+      users: [],
+      attacks: [],
+      defenses: []
+    };
+
+    const serverData = db.data.servers[guildId];
+
+    // Find the user entry in this server
+    const user = serverData.users.find(u => u.id === userId);
     if (!user || !Array.isArray(user.characters) || user.characters.length === 0) {
       return message.reply('❌ You haven’t registered any characters.');
     }
 
-    // Only look within the current user's characters
     const characterIndex = user.characters.findIndex(
       c => c.id?.toLowerCase() === charId.toLowerCase()
     );
@@ -29,7 +40,6 @@ export default {
 
     const character = user.characters[characterIndex];
 
-    // Ask for confirmation
     const confirmMsg = await message.reply(
       `⚠️ Are you sure you want to delete your character **"${character.name}"** (ID: \`${character.id}\`)?\n` +
       `Please type \`yes\` within 20 seconds to confirm.`
@@ -45,7 +55,6 @@ export default {
         errors: ['time']
       });
 
-      // Remove character safely
       user.characters.splice(characterIndex, 1);
       await db.write();
 
