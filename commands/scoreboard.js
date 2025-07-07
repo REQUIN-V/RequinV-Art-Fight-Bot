@@ -7,10 +7,24 @@ export default {
     const db = getDB();
     await db.read();
 
-    const attacks = db.data.attacks || [];
-    const defenses = db.data.defenses || [];
-    const users = db.data.users || [];
-    const settings = db.data.settings || {};
+    const guildId = message.guild.id;
+
+    // Initialize and access server-specific data
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      attacks: [],
+      defends: [],
+      settings: {},
+      teams: {}
+    };
+
+    const server = db.data.servers[guildId];
+
+    const attacks = server.attacks || [];
+    const defenses = server.defends || [];
+    const users = server.users || [];
+    const settings = server.settings || {};
     const teams = settings.teams || [];
 
     const teamScores = {};
@@ -73,3 +87,4 @@ export default {
     message.channel.send({ embeds: [embed] });
   }
 };
+
