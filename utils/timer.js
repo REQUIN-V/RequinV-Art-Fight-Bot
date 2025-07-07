@@ -53,9 +53,16 @@ export function startMonthlyTimer(client) {
       db.data.users = [];
       db.data.attacks = [];
       db.data.defenses = [];
+
+      // ⛔ Clear banned users list after event ends
+      if (db.data.settings) {
+        db.data.settings.bannedUsers = [];
+        db.data.settings.eventActive = false;
+      }
+
       await db.write();
 
-      console.log('✅ Monthly event reset complete.');
+      console.log('✅ Monthly event reset complete (bans cleared).');
       daysPassed = 0; // restart month
     }
 
@@ -66,3 +73,4 @@ export function startMonthlyTimer(client) {
   // Start ticking
   setTimeout(tick, MS_IN_A_DAY);
 }
+
