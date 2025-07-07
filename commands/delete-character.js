@@ -18,13 +18,15 @@ export default {
       return message.reply('❌ You haven’t registered any characters.');
     }
 
-    const character = user.characters.find(c => c.id === charId);
-    if (!character) {
+    const characterIndex = user.characters.findIndex(c => c.id?.toLowerCase() === charId.toLowerCase());
+    if (characterIndex === -1) {
       return message.reply(`❌ No character found with ID \`${charId}\`.`);
     }
 
+    const character = user.characters[characterIndex];
+
     const confirmMsg = await message.reply(
-      `⚠️ Are you sure you want to delete your character **"${character.name}"** (ID: \`${charId}\`)?\n` +
+      `⚠️ Are you sure you want to delete your character **"${character.name}"** (ID: \`${character.id}\`)?\n` +
       `Please type \`yes\` within 20 seconds to confirm.`
     );
 
@@ -38,8 +40,8 @@ export default {
         errors: ['time']
       });
 
-      // Remove the character
-      user.characters = user.characters.filter(c => c.id !== charId);
+      // Delete the character
+      user.characters.splice(characterIndex, 1);
 
       await db.write();
 
@@ -49,3 +51,4 @@ export default {
     }
   }
 };
+
