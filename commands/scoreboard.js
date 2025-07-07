@@ -1,45 +1,48 @@
+import { getDB } from '../utils/db.js';
+import { calculateTeamScores } from '../utils/scoreUtils.js';
+import { generateProgressBar } from '../utils/progressBar.js';
+
 export default {
   name: 'scoreboard',
   description: 'Show live team scores',
   async execute(message) {
-    const db = (await import('../utils/db.js')).getDB();
+    const db = getDB();
     await db.read();
 
-    const attacks = db.data.attacks || [];
     const users = db.data.users || [];
+    const attacks = db.data.attacks || [];
+    const defenses = db.data.defenses || [];
     const settings = db.data.settings || {};
     const teams = settings.teams || [];
 
-    const teamScores = {};
-
-    for (const attack of attacks) {
-      const attacker = users.find(u => u.id === attack.from);
-      if (!attacker || !attacker.team) continue;
-
-      if (!teamScores[attacker.team]) {
-        teamScores[attacker.team] = 0;
-      }
-
-      teamScores[attacker.team] += attack.points;
-    }
+    const teamScores = calculateTeamScores(users, attacks, defenses);
 
     if (Object.keys(teamScores).length === 0) {
       return message.reply('📉 No team scores have been recorded yet.');
     }
 
-    const sorted = Object.entries(teamScores)
-      .sort((a, b) => b[1] - a[1])
-      .map(([team, score], index) => `**${index + 1}. ${team}** – ${score} pts`);
+    const entries = Object.entries(teamScores).sort(([, a], [, b]) => b.total - a.total);
+
+    const scoreboardText = entries.map(([team, data], i) =>
+      `**${i + 1}. ${team}** — ${data.total} pts *(🖌️ ${data.attack} / 🛡️ ${data.defend})*`
+    ).join('\n');
+
+    let progressBarText = '';
+    if (entries.length >= 2) {
+      const [teamA, teamB] = entries;
+      progressBarText = generateProgressBar(teamA[1].total, teamB[1].total, teamA[0], teamB[0]);
+    }
 
     const embed = {
       title: '📊 Current Team Scoreboard',
       color: 0xff9ecb,
-      description: sorted.join('\n'),
+      description: scoreboardText + (progressBarText ? `\n\n${progressBarText}` : ''),
       footer: {
-        text: 'Updated live as attacks are submitted'
+        text: 'Updated live as attacks and defenses are submitted'
       }
     };
 
     message.channel.send({ embeds: [embed] });
   }
 };
+
