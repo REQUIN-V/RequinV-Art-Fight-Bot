@@ -3,6 +3,7 @@ import { Client, GatewayIntentBits, Collection, Events } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { startMonthlyTimer } from './utils/timer.js'; // ✅ Added for monthly reset
 
 const config = {
   token: process.env.DISCORD_TOKEN,
@@ -29,6 +30,7 @@ for (const file of commandFiles) {
 // Use Events.Ready for best practice
 client.once(Events.ClientReady, () => {
   console.log(`🤖 Bot is ready as ${client.user.tag}`);
+  startMonthlyTimer(client); // ✅ Start the monthly event reset timer
 });
 
 // Handle messages
@@ -53,4 +55,3 @@ client.on(Events.MessageCreate, async message => {
 
 // Make sure you're only running ONE bot instance
 client.login(config.token);
-
