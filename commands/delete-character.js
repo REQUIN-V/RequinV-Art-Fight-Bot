@@ -12,19 +12,24 @@ export default {
       return message.reply('❌ Usage: !delete-character <characterID>');
     }
 
+    // Find the user entry
     const user = db.data.users.find(u => u.id === userId);
-
     if (!user || !Array.isArray(user.characters) || user.characters.length === 0) {
       return message.reply('❌ You haven’t registered any characters.');
     }
 
-    const characterIndex = user.characters.findIndex(c => c.id?.toLowerCase() === charId.toLowerCase());
+    // Only look within the current user's characters
+    const characterIndex = user.characters.findIndex(
+      c => c.id?.toLowerCase() === charId.toLowerCase()
+    );
+
     if (characterIndex === -1) {
-      return message.reply(`❌ No character found with ID \`${charId}\`.`);
+      return message.reply(`❌ No character with ID \`${charId}\` found in your profile.`);
     }
 
     const character = user.characters[characterIndex];
 
+    // Ask for confirmation
     const confirmMsg = await message.reply(
       `⚠️ Are you sure you want to delete your character **"${character.name}"** (ID: \`${character.id}\`)?\n` +
       `Please type \`yes\` within 20 seconds to confirm.`
@@ -40,9 +45,8 @@ export default {
         errors: ['time']
       });
 
-      // Delete the character
+      // Remove character safely
       user.characters.splice(characterIndex, 1);
-
       await db.write();
 
       message.channel.send(`✅ Character **"${character.name}"** has been deleted successfully.`);
@@ -51,4 +55,3 @@ export default {
     }
   }
 };
-
