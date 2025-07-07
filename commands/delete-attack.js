@@ -14,15 +14,26 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
-    const index = db.data.attacks.findIndex(a => a.id === attackId);
+    const guildId = message.guild.id;
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
+      users: [],
+      attacks: [],
+      defenses: []
+    };
+
+    const serverData = db.data.servers[guildId];
+
+    const index = serverData.attacks.findIndex(a => a.id === attackId);
     if (index === -1) {
       return message.reply('❌ Attack not found.');
     }
 
-    const deleted = db.data.attacks.splice(index, 1)[0];
+    const deleted = serverData.attacks.splice(index, 1)[0];
 
     // 🔍 Clean up from attacker's gallery
-    const attacker = db.data.users.find(u => u.id === deleted.from);
+    const attacker = serverData.users.find(u => u.id === deleted.from);
     if (attacker && attacker.gallery) {
       attacker.gallery = attacker.gallery.filter(entry => {
         return !(
