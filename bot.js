@@ -11,7 +11,11 @@ const config = {
 };
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
 });
 
 client.commands = new Collection();
@@ -21,7 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Load commands safely
+// Load all command files
 for (const file of commandFiles) {
   const filePath = `file://${path.join(commandsPath, file)}`;
   try {
@@ -39,12 +43,13 @@ for (const file of commandFiles) {
 // Bot ready
 client.once(Events.ClientReady, () => {
   console.log(`🤖 Bot is ready as ${client.user.tag}`);
-  startMonthlyTimer(client); // ✅ Start monthly timer
+  startMonthlyTimer(client); // ✅ Starts monthly check for all guilds
 });
 
-// Handle messages
+// Command handler
 client.on(Events.MessageCreate, async message => {
-  if (!message.content.startsWith(config.prefix) || message.author.bot) return;
+  if (!message.guild || message.author.bot) return;
+  if (!message.content.startsWith(config.prefix)) return;
 
   const args = message.content.slice(config.prefix.length).trim().split(/ +/);
   const commandName = args.shift().toLowerCase();
@@ -53,9 +58,10 @@ client.on(Events.MessageCreate, async message => {
   if (!command) return;
 
   try {
-    await command.execute(message, args);
+    // 👇 Pass `client` and `message.guild.id` to all commands for multi-guild use
+    await command.execute(message, args, client, message.guild.id);
   } catch (error) {
-    console.error(error);
+    console.error(`❌ Error executing ${commandName}:`, error);
     if (!message.replied && !message.deferred) {
       message.reply('❌ There was an error executing that command.');
     }
@@ -63,3 +69,4 @@ client.on(Events.MessageCreate, async message => {
 });
 
 client.login(config.token);
+
