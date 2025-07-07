@@ -9,10 +9,15 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const eventActive = db.data.settings?.eventActive;
+    if (!eventActive) {
+      return message.reply('🚫 There is no active event right now. You cannot submit attacks.');
+    }
+
     const authorId = message.author.id;
     const mention = message.mentions.users.first();
     if (!mention) return message.reply('❌ Usage: !attack @user <type> <tag> [description] (attach image)');
-    args.shift(); // Remove @mention from args
+    args.shift(); // Remove @mention
 
     const type = args[0]?.toLowerCase();
     const tag = args[1]?.toLowerCase();
@@ -51,7 +56,14 @@ export default {
 
     const attacker = db.data.users.find(u => u.id === authorId);
     const target = db.data.users.find(u => u.id === mention.id);
-    if (!attacker || !target) return message.reply('❌ Either you or the target hasn’t registered a character yet.');
+
+    if (!attacker || !target) {
+      return message.reply('❌ Either you or the target hasn’t registered a character yet.');
+    }
+
+    if (!attacker.team) {
+      return message.reply('🚫 You must join a team first using `!join-team <teamName>` to attack.');
+    }
 
     const isDuplicate = (db.data.attacks || []).some(a => a.from === authorId && a.imageUrl === imageUrl);
     if (isDuplicate) return message.reply('⚠️ You already submitted this image before.');
@@ -108,7 +120,7 @@ export default {
 
     await message.channel.send({ embeds: [embed] });
 
-    // 🔒 Log to mod channel with action buttons
+    // 🔒 Log to mod channel
     const logChannelId = db.data.settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
