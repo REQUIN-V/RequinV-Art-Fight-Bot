@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// Load the MongoDB URI from environment variable
+// ✅ Load the MongoDB URI from environment variables
 const mongoURI = process.env.MONGODB_URI;
 
 if (!mongoURI) {
@@ -8,13 +8,18 @@ if (!mongoURI) {
   process.exit(1);
 }
 
+let isConnected = false;
+
 export async function connectToDatabase() {
+  if (isConnected) return;
+
   try {
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
 
+    isConnected = true;
     console.log('✅ Successfully connected to MongoDB');
   } catch (error) {
     console.error('❌ Failed to connect to MongoDB:', error);
