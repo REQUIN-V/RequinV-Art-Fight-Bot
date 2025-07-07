@@ -9,13 +9,24 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
-    const eventActive = db.data.settings?.eventActive;
+    const guildId = message.guild.id;
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
+      users: [],
+      attacks: [],
+      defenses: []
+    };
+
+    const serverData = db.data.servers[guildId];
+    const eventActive = serverData.settings?.eventActive;
+
     if (!eventActive) {
       return message.reply('🚫 There is no active event right now. You cannot submit attacks.');
     }
 
     // ❌ Check if user is banned from the event
-    const bannedUsers = db.data.settings?.bannedUsers || [];
+    const bannedUsers = serverData.settings?.bannedUsers || [];
     if (bannedUsers.some(u => u.id === message.author.id)) {
       return message.reply('🚫 You are banned from participating in this event.');
     }
@@ -56,8 +67,7 @@ export default {
       contentType === 'application/octet-stream'
     ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
-    // 🔞 Optional tag restriction
-    if (tag === '18+' && db.data.settings?.allow18 === false) {
+    if (tag === '18+' && serverData.settings?.allow18 === false) {
       return message.reply('🚫 Submitting content tagged as `18+` is currently disabled for this event.');
     }
 
@@ -65,8 +75,8 @@ export default {
       return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
     }
 
-    const attacker = db.data.users.find(u => u.id === authorId);
-    const target = db.data.users.find(u => u.id === mention.id);
+    const attacker = serverData.users.find(u => u.id === authorId);
+    const target = serverData.users.find(u => u.id === mention.id);
 
     if (!attacker || !target) {
       return message.reply('❌ Either you or the target hasn’t registered a character yet.');
@@ -76,7 +86,7 @@ export default {
       return message.reply('🚫 You must join a team first using `!join-team <teamName>` to attack.');
     }
 
-    const isDuplicate = (db.data.attacks || []).some(a => a.from === authorId && a.imageUrl === imageUrl);
+    const isDuplicate = (serverData.attacks || []).some(a => a.from === authorId && a.imageUrl === imageUrl);
     if (isDuplicate) return message.reply('⚠️ You already submitted this image before.');
 
     const cooldownTime = 300_000;
@@ -102,7 +112,7 @@ export default {
       timestamp: new Date().toISOString()
     };
 
-    db.data.attacks.push(attack);
+    serverData.attacks.push(attack);
 
     attacker.gallery = attacker.gallery || [];
     attacker.gallery.push({
@@ -131,7 +141,6 @@ export default {
 
     await message.channel.send({ embeds: [embed] });
 
-    // 🔔 DM the mentioned user with a download button
     try {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -149,8 +158,7 @@ export default {
       console.warn(`Could not DM user ${mention.username}`);
     }
 
-    // 🔒 Log to mod channel
-    const logChannelId = db.data.settings?.logChannel;
+    const logChannelId = serverData.settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
       if (logChannel?.isTextBased()) {
