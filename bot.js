@@ -3,12 +3,12 @@ import { Client, GatewayIntentBits, Collection, Events } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { startMonthlyTimer } from './utils/timer.js'; // ✅ Monthly reset timer
+import { config } from 'dotenv';
+import { startMonthlyTimer } from './utils/timer.js';
+import { connectToDatabase } from './utils/database.js'; // ✅ Your MongoDB connection file
 
-const config = {
-  token: process.env.DISCORD_TOKEN,
-  prefix: '!'
-};
+// Load .env variables
+config();
 
 const client = new Client({
   intents: [
@@ -49,16 +49,15 @@ client.once(Events.ClientReady, () => {
 // Command handler
 client.on(Events.MessageCreate, async message => {
   if (!message.guild || message.author.bot) return;
-  if (!message.content.startsWith(config.prefix)) return;
+  if (!message.content.startsWith('!')) return;
 
-  const args = message.content.slice(config.prefix.length).trim().split(/ +/);
+  const args = message.content.slice(1).trim().split(/ +/);
   const commandName = args.shift().toLowerCase();
   const command = client.commands.get(commandName);
 
   if (!command) return;
 
   try {
-    // 👇 Pass `client` and `message.guild.id` to all commands for multi-guild use
     await command.execute(message, args, client, message.guild.id);
   } catch (error) {
     console.error(`❌ Error executing ${commandName}:`, error);
@@ -68,5 +67,13 @@ client.on(Events.MessageCreate, async message => {
   }
 });
 
-client.login(config.token);
-
+// ✅ Connect to MongoDB and then login the bot
+connectToDatabase()
+  .then(() => {
+    console.log('✅ MongoDB connected!');
+    return client.login(process.env.DISCORD_TOKEN);
+  })
+  .catch(err => {
+    console.error('❌ Failed to connect to MongoDB:', err);
+    process.exit(1);
+  });
