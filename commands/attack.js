@@ -14,6 +14,12 @@ export default {
       return message.reply('🚫 There is no active event right now. You cannot submit attacks.');
     }
 
+    // ❌ Check if user is banned from the event
+    const bannedUsers = db.data.settings?.bannedUsers || [];
+    if (bannedUsers.some(u => u.id === message.author.id)) {
+      return message.reply('🚫 You are banned from participating in this event.');
+    }
+
     const authorId = message.author.id;
     const mention = message.mentions.users.first();
     if (!mention) return message.reply('❌ Usage: !attack @user <type> <tag> [description] (attach image)');
@@ -50,7 +56,7 @@ export default {
       contentType === 'application/octet-stream'
     ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
-    // 🔞 Optional tag restriction: check if 18+ tag is disabled
+    // 🔞 Optional tag restriction
     if (tag === '18+' && db.data.settings?.allow18 === false) {
       return message.reply('🚫 Submitting content tagged as `18+` is currently disabled for this event.');
     }
