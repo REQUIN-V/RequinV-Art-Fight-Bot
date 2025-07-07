@@ -97,19 +97,24 @@ export default {
     };
 
     const makeButtons = () => {
-      return new ActionRowBuilder().addComponents(
+      const sectionRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('section:summary').setLabel('ℹ️').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('section:characters').setLabel('🎨').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('section:attacks').setLabel('🏹').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('section:defends').setLabel('🛡️').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('section:defends').setLabel('🛡️').setStyle(ButtonStyle.Secondary)
+      );
+
+      const navRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('page:prev').setLabel('↩️').setStyle(ButtonStyle.Primary),
         new ButtonBuilder().setCustomId('page:next').setLabel('↪️').setStyle(ButtonStyle.Primary)
       );
+
+      return [sectionRow, navRow];
     };
 
     const sent = await message.channel.send({
       embeds: [getEmbed(state.section, state.page)],
-      components: [makeButtons()]
+      components: makeButtons()
     });
 
     const collector = sent.createMessageComponentCollector({ time: 5 * 60 * 1000 });
@@ -129,7 +134,7 @@ export default {
 
       await interaction.update({
         embeds: [getEmbed(state.section, state.page)],
-        components: [makeButtons()]
+        components: makeButtons()
       });
     });
   }
