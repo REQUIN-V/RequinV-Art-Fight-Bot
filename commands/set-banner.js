@@ -8,12 +8,17 @@ export default {
       return message.reply('❌ You do not have permission to use this command.');
     }
 
-    // Get image URL from args or attachment
     let bannerUrl = args[0];
 
+    // Check for attachment if no URL provided
     if (!bannerUrl && message.attachments.size > 0) {
-      const image = message.attachments.find(att => att.contentType?.startsWith('image/'));
-      if (image) bannerUrl = image.url;
+      const imageAttachment = message.attachments.find(att =>
+        att.contentType?.startsWith('image/') ||
+        /\.(jpg|jpeg|png|gif|webp)$/i.test(att.name)
+      );
+      if (imageAttachment) {
+        bannerUrl = imageAttachment.url;
+      }
     }
 
     if (!bannerUrl || !/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(bannerUrl)) {
@@ -27,6 +32,13 @@ export default {
     db.data.settings.sharedScoreboardBanner = bannerUrl;
     await db.write();
 
-    return message.reply(`✅ Shared scoreboard banner set to:\n${bannerUrl}`);
+    return message.reply({
+      content: '✅ Shared scoreboard banner has been set!',
+      embeds: [{
+        title: '📢 New Scoreboard Banner',
+        image: { url: bannerUrl },
+        color: 0xff9ecb
+      }]
+    });
   }
 };
