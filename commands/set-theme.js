@@ -1,3 +1,5 @@
+import { getDB } from '../utils/db.js';
+
 export default {
   name: 'set-theme',
   description: 'Set or clear the theme for the current Art Fight event (mod-only). Usage: !set-theme <optional theme name>',
@@ -6,18 +8,29 @@ export default {
       return message.reply('❌ You do not have permission to use this command.');
     }
 
-    const themeName = args.join(' ');
-    const db = (await import('../utils/db.js')).getDB();
+    const themeName = args.join(' ').trim();
+    const guildId = message.guild.id;
+
+    const db = getDB();
     await db.read();
 
-    db.data.settings = db.data.settings || {};
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      attacks: [],
+      defends: [],
+      settings: {},
+      teams: []
+    };
+
+    const server = db.data.servers[guildId];
 
     if (themeName) {
-      db.data.settings.theme = themeName;
+      server.settings.theme = themeName;
       await db.write();
       message.channel.send(`🎨 Theme set to: **${themeName}**`);
     } else {
-      delete db.data.settings.theme;
+      delete server.settings.theme;
       await db.write();
       message.channel.send(`🗑️ Theme has been cleared.`);
     }
