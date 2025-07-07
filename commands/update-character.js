@@ -5,6 +5,7 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const guildId = message.guild.id;
     const userId = message.author.id;
     const charId = args[0];
 
@@ -17,7 +18,6 @@ export default {
     const contentType = attachment?.contentType || '';
     const imageUrl = attachment?.url;
 
-    // Reject non-image content types
     if (
       attachment &&
       (contentType.startsWith('audio/') ||
@@ -27,13 +27,23 @@ export default {
       return message.reply('❌ Only image files are allowed. No audio or video files.');
     }
 
-    // Find the user and their character list
-    const user = db.data.users.find(u => u.id === userId);
+    // 🛡️ Ensure server data exists
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      attacks: [],
+      defends: [],
+      settings: {},
+      teams: {}
+    };
+
+    const server = db.data.servers[guildId];
+
+    const user = server.users.find(u => u.id === userId);
     if (!user || !user.characters || user.characters.length === 0) {
       return message.reply('❌ You don’t have any registered characters.');
     }
 
-    // Find the specific character by ID
     const character = user.characters.find(c => String(c.id) === String(charId));
     if (!character) {
       return message.reply(`❌ Character with ID \`${charId}\` not found.`);
@@ -48,7 +58,6 @@ export default {
 
     await db.write();
 
-    message.channel.send(`✅ Character \`${charId}\` updated successfully!`);
+    return message.channel.send(`✅ Character \`${charId}\` updated successfully!`);
   }
 };
-
