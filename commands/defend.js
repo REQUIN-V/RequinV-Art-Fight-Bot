@@ -9,6 +9,9 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const settings = db.data.settings || {};
+    const allow18 = settings.allow18 !== false; // default to true if not defined
+
     const defenderId = message.author.id;
     const attackId = args[0];
 
@@ -26,6 +29,7 @@ export default {
       refined: 8,
       'full-effort': 12
     };
+
     const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
 
     if (!attackId || !effortLevels[effort] || !tag || !imageUrl) {
@@ -43,6 +47,10 @@ export default {
     ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
     if (!allowedTags.includes(tag)) return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
+
+    if (!allow18 && tag === '18+') {
+      return message.reply('🔞 Submitting `18+` content is currently disabled by the moderators.');
+    }
 
     const defender = db.data.users.find(u => u.id === defenderId);
     if (!defender) return message.reply('❌ You must register a character before defending.');
@@ -116,12 +124,31 @@ export default {
 
     await message.channel.send({ embeds: [embed] });
 
-    // 🔒 Log to mod channel
+    // DM the original attacker with a download button
+    try {
+      const downloadRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('📥 Download Defense Art')
+          .setStyle(ButtonStyle.Link)
+          .setURL(imageUrl)
+      );
+
+      const attackerUser = await message.client.users.fetch(attack.from);
+      await attackerUser.send({
+        content: `🛡️ You were defended against by **${message.author.username}**! Download the defense art below if you'd like to retaliate:`,
+        embeds: [embed],
+        components: [downloadRow]
+      });
+    } catch (err) {
+      console.warn('Could not DM original attacker.');
+    }
+
+    // Log to mod channel
     const logChannelId = db.data.settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
       if (logChannel?.isTextBased()) {
-        const actionRow = new ActionRowBuilder().addComponents(
+        const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId(`deleteDefend:${defendId}`)
             .setLabel('🗑️ Delete')
@@ -131,8 +158,7 @@ export default {
             .setLabel('🚩 Report')
             .setStyle(ButtonStyle.Secondary)
         );
-
-        await logChannel.send({ embeds: [embed], components: [actionRow] });
+        await logChannel.send({ embeds: [embed], components: [row] });
       }
     }
   }
