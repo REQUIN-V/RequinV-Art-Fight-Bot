@@ -1,9 +1,10 @@
 import { PermissionsBitField } from 'discord.js';
+import { startMonthlyTimer } from '../utils/timer.js';
 
 export default {
   name: 'start-event',
   description: 'Starts the 30-day art fight event. [Mod-only]',
-  async execute(message) {
+  async execute(message, args, client) {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
@@ -30,6 +31,9 @@ export default {
     db.data.settings.bannedUsers = db.data.settings.bannedUsers || [];
 
     await db.write();
+
+    // 🔁 Start the timer
+    startMonthlyTimer(client);
 
     // 📢 Confirmation message
     return message.channel.send(
