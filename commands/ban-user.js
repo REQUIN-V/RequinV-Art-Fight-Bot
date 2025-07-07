@@ -16,19 +16,27 @@ export default {
     const db = getDB();
     await db.read();
 
-    const now = new Date().toISOString();
+    const guildId = message.guild.id;
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
+      users: [],
+      attacks: [],
+      defenses: []
+    };
 
-    db.data.settings = db.data.settings || {};
-    db.data.settings.bannedUsers = db.data.settings.bannedUsers || [];
+    const serverSettings = db.data.servers[guildId].settings;
+    serverSettings.bannedUsers = serverSettings.bannedUsers || [];
 
-    const alreadyBanned = db.data.settings.bannedUsers.find(user => user.id === mention.id);
+    const alreadyBanned = serverSettings.bannedUsers.find(user => user.id === mention.id);
     if (alreadyBanned) {
       return message.reply('🚫 That user is already banned from the event.');
     }
 
-    db.data.settings.bannedUsers.push({ id: mention.id, bannedAt: now });
+    serverSettings.bannedUsers.push({ id: mention.id, bannedAt: new Date().toISOString() });
+
     await db.write();
 
-    return message.reply(`✅ <@${mention.id}> has been banned from participating in this event.`);
+    return message.reply(`✅ <@${mention.id}> has been banned from participating in this server’s event.`);
   }
 };
