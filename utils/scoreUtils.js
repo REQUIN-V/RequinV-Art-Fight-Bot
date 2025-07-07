@@ -1,4 +1,13 @@
-export function calculateTeamScores(users, attacks, defenses) {
+/**
+ * Calculate team scores for a specific server's data
+ * @param {Object} serverData - The data object for one guild/server from db.data.servers[guildId]
+ * @returns {Object} teamScores - Scores grouped by team name
+ */
+export function calculateTeamScores(serverData) {
+  const users = serverData.users || [];
+  const attacks = serverData.attacks || [];
+  const defenses = serverData.defends || [];
+
   const teamScores = {};
 
   for (const user of users) {
@@ -6,7 +15,7 @@ export function calculateTeamScores(users, attacks, defenses) {
 
     const team = user.team;
 
-    // Start team score at 0
+    // Initialize team score object
     if (!teamScores[team]) {
       teamScores[team] = { attack: 0, defend: 0, total: 0 };
     }
