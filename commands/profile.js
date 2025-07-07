@@ -1,4 +1,9 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder
+} from 'discord.js';
 
 export default {
   name: 'profile',
@@ -9,7 +14,10 @@ export default {
 
     const target = message.mentions.users.first() || message.author;
     const user = db.data.users.find(u => u.id === target.id);
-    if (!user) return message.reply('❌ This user has not registered a character.');
+    if (!user) {
+      await message.reply('❌ This user has not registered a character.');
+      return;
+    }
 
     const allAttacks = db.data.attacks || [];
     const allDefends = db.data.defends || [];
@@ -19,9 +27,8 @@ export default {
     const teamName = user.team || 'None';
 
     const teamMembers = db.data.users.filter(u => u.team === teamName);
-    const teamPoints = teamMembers.reduce(
-      (sum, member) => sum + allAttacks.filter(a => a.from === member.id).reduce((s, a) => s + a.points, 0),
-      0
+    const teamPoints = teamMembers.reduce((sum, member) =>
+      sum + allAttacks.filter(a => a.from === member.id).reduce((s, a) => s + a.points, 0), 0
     );
 
     let state = { section: 'summary', page: 0 };
