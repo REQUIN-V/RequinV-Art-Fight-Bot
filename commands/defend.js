@@ -10,7 +10,13 @@ export default {
     await db.read();
 
     const settings = db.data.settings || {};
-    const allow18 = settings.allow18 !== false; // default to true if not defined
+    const allow18 = settings.allow18 !== false;
+
+    // 🚫 Check if the user is banned
+    const bannedUsers = db.data.settings?.bannedUsers || [];
+    if (bannedUsers.some(u => u.id === message.author.id)) {
+      return message.reply('🚫 You are banned from participating in this event.');
+    }
 
     const defenderId = message.author.id;
     const attackId = args[0];
