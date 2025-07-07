@@ -120,6 +120,24 @@ export default {
 
     await message.channel.send({ embeds: [embed] });
 
+    // 🔔 DM the mentioned user with a download button
+    try {
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('📥 Download Attack Art')
+          .setStyle(ButtonStyle.Link)
+          .setURL(imageUrl)
+      );
+
+      await mention.send({
+        content: `🎯 You were attacked by **${message.author.username}**! Download the art below if you want to retaliate:`,
+        embeds: [embed],
+        components: [row]
+      });
+    } catch (e) {
+      console.warn(`Could not DM user ${mention.username}`);
+    }
+
     // 🔒 Log to mod channel
     const logChannelId = db.data.settings?.logChannel;
     if (logChannelId) {
