@@ -50,6 +50,11 @@ export default {
       contentType === 'application/octet-stream'
     ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
+    // 🔞 Optional tag restriction: check if 18+ tag is disabled
+    if (tag === '18+' && db.data.settings?.allow18 === false) {
+      return message.reply('🚫 Submitting content tagged as `18+` is currently disabled for this event.');
+    }
+
     if (!allowedTags.includes(tag)) {
       return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
     }
