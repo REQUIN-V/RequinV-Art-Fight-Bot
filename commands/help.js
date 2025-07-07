@@ -1,23 +1,18 @@
 export default {
   name: 'help',
-  description: 'Show a link to the full command documentation.',
-  async execute(message) {
+  description: 'Show all available user commands.',
+  async execute(message, args, client) {
     const embed = {
-      title: '📖 Profic Art Royal Bot – Full Command Guide',
-      description: 'Click the link below to view the full documentation with all commands, usage, and examples:',
+      title: '🖌️ Profic Art Royal Bot – Commands Guide',
       color: 0xff9ecb,
-      fields: [
-        {
-          name: '📄 Google Docs:',
-          value: '[Open Documentation](https://docs.google.com/document/d/1FtqzjUpLgx8J4nWUxm-aMWzbo7msvnl6vIbzQKvUhL8/preview)'
-        }
-      ],
+      description:
+        '📘 You can view the full bot documentation and usage guide here:\n' +
+        '[**Profic Art Royal – Google Docs**](https://docs.google.com/document/d/1FtqzjUpLgx8J4nWUxm-aMWzbo7msvnl6vIbzQKvUhL8/preview?tab=t.0#heading=h.dlrvqsooc0h)',
       footer: {
         text: 'Use !help anytime to get this link again.'
       }
     };
 
-    await message.channel.send({ embeds: [embed] });
+    return message.channel.send({ embeds: [embed] });
   }
 };
-
