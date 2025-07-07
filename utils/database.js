@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
-const mongoURI = process.env.MONGODB_URI; // Set this in your GitHub Secrets or .env file
+// Load the MongoDB URI from environment variable
+const mongoURI = process.env.MONGODB_URI;
+
+if (!mongoURI) {
+  console.error('❌ MONGODB_URI is not set in your environment or GitHub Secrets.');
+  process.exit(1);
+}
 
 export async function connectToDatabase() {
   try {
@@ -8,9 +14,10 @@ export async function connectToDatabase() {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    console.log('✅ Connected to MongoDB');
+
+    console.log('✅ Successfully connected to MongoDB');
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error);
+    console.error('❌ Failed to connect to MongoDB:', error);
     process.exit(1);
   }
 }
