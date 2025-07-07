@@ -2,7 +2,7 @@ import { getDB } from '../utils/db.js';
 
 export default {
   name: 'set-banner',
-  description: 'Set or update the shared scoreboard banner image (mods only)',
+  description: 'Set the shared scoreboard banner image (mods only)',
   async execute(message, args) {
     // Permission check
     if (!message.member.permissions.has('ManageMessages')) {
@@ -11,18 +11,16 @@ export default {
 
     let bannerUrl = args[0];
 
-    // Helper to validate image URLs
+    // Image URL validator
     const isImageUrl = url =>
       typeof url === 'string' && /^https?:\/\/.+\.(png|jpe?g|gif|webp)$/i.test(url);
 
-    // If invalid or no URL, check for attachments
-    if (!isImageUrl(bannerUrl) && message.attachments.size > 0) {
-      const imageAttachment = message.attachments.find(att => {
-        const fileType = att.contentType || '';
-        return fileType.startsWith('image/');
-      });
-
-      if (imageAttachment) bannerUrl = imageAttachment.url;
+    // Check if user uploaded an image instead
+    if (!isImageUrl(bannerUrl)) {
+      const attachment = message.attachments.first();
+      if (attachment && attachment.contentType?.startsWith('image/')) {
+        bannerUrl = attachment.url;
+      }
     }
 
     // Final validation
@@ -37,7 +35,7 @@ export default {
     db.data.settings.sharedScoreboardBanner = bannerUrl;
     await db.write();
 
-    // Confirmation embed
+    // Confirmation message
     return message.reply({
       content: '✅ Scoreboard banner successfully updated!',
       embeds: [
