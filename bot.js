@@ -21,19 +21,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Only load commands once
+// Load commands
 for (const file of commandFiles) {
   const command = await import(`./commands/${file}`);
   client.commands.set(command.default.name, command.default);
 }
 
-// Use Events.Ready for best practice
+// On bot ready
 client.once(Events.ClientReady, () => {
   console.log(`🤖 Bot is ready as ${client.user.tag}`);
-  startMonthlyTimer(client); // ✅ Start the monthly event reset timer
+  startMonthlyTimer(client); // ✅ Start monthly event timer when bot is ready
 });
 
-// Handle messages
+// Command handler
 client.on(Events.MessageCreate, async message => {
   if (!message.content.startsWith(config.prefix) || message.author.bot) return;
 
@@ -53,5 +53,4 @@ client.on(Events.MessageCreate, async message => {
   }
 });
 
-// Make sure you're only running ONE bot instance
 client.login(config.token);
