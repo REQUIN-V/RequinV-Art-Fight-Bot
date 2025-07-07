@@ -5,6 +5,7 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const guildId = message.guild.id;
     const userId = message.author.id;
     const teamName = args.join(' ').trim();
 
@@ -12,13 +13,22 @@ export default {
       return message.reply('❌ Usage: !join-team <TeamName>');
     }
 
-    const user = db.data.users.find(u => u.id === userId);
+    // Ensure the server-specific structure exists
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      teams: {},
+      settings: {}
+    };
+
+    const server = db.data.servers[guildId];
+    const user = server.users.find(u => u.id === userId);
+    const teams = server.teams || {};
+    const validTeams = Object.values(teams);
+
     if (!user) {
       return message.reply('❌ You must register your character before joining a team.');
     }
-
-    const teams = db.data.teams || {};
-    const validTeams = Object.values(teams);
 
     if (!validTeams.includes(teamName)) {
       return message.reply(
@@ -36,4 +46,3 @@ export default {
     message.channel.send(`🎉 ${message.author.username} has joined **${teamName}**!`);
   }
 };
-
