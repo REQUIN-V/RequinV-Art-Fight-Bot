@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits, Collection, Events } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { startMonthlyTimer } from './utils/timer.js'; // ✅ Added for monthly reset
+import { startMonthlyTimer } from './utils/timer.js'; // ✅ Monthly reset timer
 
 const config = {
   token: process.env.DISCORD_TOKEN,
@@ -16,24 +16,33 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Resolve current directory path
+// Resolve directory
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Load commands
+// Load commands safely
 for (const file of commandFiles) {
-  const command = await import(`./commands/${file}`);
-  client.commands.set(command.default.name, command.default);
+  const filePath = `file://${path.join(commandsPath, file)}`;
+  try {
+    const command = await import(filePath);
+    if (!command?.default?.name) {
+      console.warn(`⚠️ Skipped loading command: ${file} (missing name or invalid export)`);
+      continue;
+    }
+    client.commands.set(command.default.name, command.default);
+  } catch (err) {
+    console.error(`❌ Failed to load command ${file}:`, err.message);
+  }
 }
 
-// On bot ready
+// Bot ready
 client.once(Events.ClientReady, () => {
   console.log(`🤖 Bot is ready as ${client.user.tag}`);
-  startMonthlyTimer(client); // ✅ Start monthly event timer when bot is ready
+  startMonthlyTimer(client); // ✅ Start monthly timer
 });
 
-// Command handler
+// Handle messages
 client.on(Events.MessageCreate, async message => {
   if (!message.content.startsWith(config.prefix) || message.author.bot) return;
 
