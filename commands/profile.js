@@ -12,21 +12,35 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
+    const guildId = message.guild.id;
     const target = message.mentions.users.first() || message.author;
-    const user = db.data.users.find(u => u.id === target.id);
+
+    // 🛠️ Ensure server structure exists
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      attacks: [],
+      defends: [],
+      settings: {},
+      teams: {}
+    };
+
+    const server = db.data.servers[guildId];
+
+    const user = server.users.find(u => u.id === target.id);
     if (!user) {
       await message.reply('❌ This user has not registered a character.');
       return;
     }
 
-    const allAttacks = db.data.attacks || [];
-    const allDefends = db.data.defends || [];
+    const allAttacks = server.attacks || [];
+    const allDefends = server.defends || [];
 
     const attackPoints = allAttacks.filter(a => a.from === user.id).reduce((sum, a) => sum + a.points, 0);
     const defendPoints = allDefends.filter(d => d.from === user.id).reduce((sum, d) => sum + d.points, 0);
     const teamName = user.team || 'None';
 
-    const teamMembers = db.data.users.filter(u => u.team === teamName);
+    const teamMembers = server.users.filter(u => u.team === teamName);
     const teamPoints = teamMembers.reduce((sum, member) =>
       sum + allAttacks.filter(a => a.from === member.id).reduce((s, a) => s + a.points, 0), 0
     );
@@ -84,7 +98,7 @@ export default {
         } else {
           embed.setTitle(`🛡️ Defense ID: ${def.id}`);
           embed.setDescription(
-            `🎨 Type: ${def.type} (${def.points} pts)\n` +
+            `🎨 Type: ${def.effort} (${def.points} pts)\n` +
             `🏷️ Tag: ${def.tag}\n` +
             (def.description ? `📝 ${def.description}` : '')
           );
@@ -139,3 +153,4 @@ export default {
     });
   }
 };
+
