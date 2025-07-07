@@ -13,32 +13,43 @@ export default {
       return message.reply('❌ Internal error: client not found.');
     }
 
+    const guildId = message.guild.id;
+
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
-    // Prevent multiple starts
-    db.data.settings = db.data.settings || {};
-    if (db.data.settings.eventActive) {
-      return message.reply('⚠️ The event is already active.');
+    // Ensure server structure exists
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      users: [],
+      attacks: [],
+      defends: [],
+      settings: {},
+      teams: []
+    };
+
+    const server = db.data.servers[guildId];
+
+    if (server.settings.eventActive) {
+      return message.reply('⚠️ The event is already active in this server.');
     }
 
     const now = Date.now();
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    const end = now + thirtyDays;
+    const end = now + 30 * 24 * 60 * 60 * 1000; // 30 days
 
-    db.data.settings.eventActive = true;
-    db.data.settings.eventStartTime = now;
-    db.data.settings.eventEndTime = end;
-    db.data.settings.allow18 = true;
-    db.data.settings.bannedUsers = db.data.settings.bannedUsers || [];
+    server.settings.eventActive = true;
+    server.settings.eventStartTime = now;
+    server.settings.eventEndTime = end;
+    server.settings.allow18 = true;
+    server.settings.bannedUsers = server.settings.bannedUsers || [];
 
     await db.write();
 
-    // Start the auto-reset timer
+    // Start the auto-reset timer if needed (optional for global monitoring)
     startMonthlyTimer(client);
 
     return message.channel.send(
-      `🎉 The art fight event has officially started!\n` +
+      `🎉 The Art Fight event has officially started on this server!\n` +
       `🕒 It will end <t:${Math.floor(end / 1000)}:R> (on <t:${Math.floor(end / 1000)}:f>).`
     );
   }
