@@ -12,7 +12,7 @@ export default {
     const authorId = message.author.id;
     const mention = message.mentions.users.first();
     if (!mention) return message.reply('❌ Usage: !attack @user <type> <tag> [description] (attach image)');
-    args.shift(); // Remove @mention
+    args.shift(); // Remove @mention from args
 
     const type = args[0]?.toLowerCase();
     const tag = args[1]?.toLowerCase();
@@ -28,6 +28,7 @@ export default {
       animation: 15,
       wip: 1
     };
+
     const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
 
     if (!allowedTypes[type] || !tag || !imageUrl) {
@@ -44,7 +45,9 @@ export default {
       contentType === 'application/octet-stream'
     ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
-    if (!allowedTags.includes(tag)) return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
+    if (!allowedTags.includes(tag)) {
+      return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
+    }
 
     const attacker = db.data.users.find(u => u.id === authorId);
     const target = db.data.users.find(u => u.id === mention.id);
@@ -63,6 +66,7 @@ export default {
 
     const points = allowedTypes[type];
     const attackId = Date.now();
+
     const attack = {
       id: attackId,
       from: authorId,
@@ -76,6 +80,7 @@ export default {
     };
 
     db.data.attacks.push(attack);
+
     attacker.gallery = attacker.gallery || [];
     attacker.gallery.push({
       imageUrl,
@@ -107,7 +112,7 @@ export default {
     const logChannelId = db.data.settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
-      if (logChannel && logChannel.isTextBased()) {
+      if (logChannel?.isTextBased()) {
         const actionRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId(`deleteAttack:${attackId}`)
@@ -118,7 +123,6 @@ export default {
             .setLabel('🚩 Report')
             .setStyle(ButtonStyle.Secondary)
         );
-
         logChannel.send({ embeds: [embed], components: [actionRow] });
       }
     }
