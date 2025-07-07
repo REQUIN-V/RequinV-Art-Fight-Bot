@@ -2,32 +2,31 @@ import { getDB } from '../utils/db.js';
 
 export default {
   name: 'edit-banner',
-  description: 'Edit the existing scoreboard banner (mods only)',
+  description: 'Edit the shared scoreboard banner image (mods only)',
   async execute(message, args) {
-    // Permission check
-    if (!message.member.permissions.has('ManageMessages') && !message.member.permissions.has('Administrator')) {
+    if (!message.member.permissions.has('ManageMessages')) {
       return message.reply('❌ You do not have permission to use this command.');
     }
 
-    const newUrl =
-      args[0] && /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(args[0])
-        ? args[0]
-        : message.attachments.first()?.url;
+    // Allow either URL or uploaded image
+    let newBannerUrl = args[0];
 
-    if (!newUrl || !/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(newUrl)) {
+    if (!newBannerUrl && message.attachments.size > 0) {
+      const image = message.attachments.find(att => att.contentType?.startsWith('image/'));
+      if (image) newBannerUrl = image.url;
+    }
+
+    if (!newBannerUrl || !/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(newBannerUrl)) {
       return message.reply('⚠️ Please provide a valid image URL or upload an image with the command.');
     }
 
     const db = getDB();
     await db.read();
 
-    if (!db.data.settings?.sharedScoreboardBanner) {
-      return message.reply('⚠️ No banner is currently set. Use `!set-banner` instead.');
-    }
-
-    db.data.settings.sharedScoreboardBanner = newUrl;
+    db.data.settings = db.data.settings || {};
+    db.data.settings.sharedScoreboardBanner = newBannerUrl;
     await db.write();
 
-    return message.reply(`✅ Scoreboard banner updated to:\n${newUrl}`);
+    return message.reply(`✅ Banner image successfully updated:\n${newBannerUrl}`);
   }
 };
