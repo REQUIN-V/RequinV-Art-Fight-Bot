@@ -2,53 +2,67 @@ import { getDB } from './db.js';
 import { calculateTeamScores } from './scoreUtils.js';
 import { generateProgressBar } from './progressBar.js';
 
+const MS_IN_A_DAY = 24 * 60 * 60 * 1000;
+const DAYS_IN_MONTH = 30;
+
 /**
  * Starts the monthly timer and performs event reset + announcement after 30 days.
  */
 export function startMonthlyTimer(client) {
-  const MS_IN_A_MONTH = 30 * 24 * 60 * 60 * 1000;
+  let daysPassed = 0;
 
-  setTimeout(async () => {
-    const db = getDB();
-    await db.read();
+  const tick = async () => {
+    daysPassed++;
 
-    const users = db.data.users || [];
-    const attacks = db.data.attacks || [];
-    const defenses = db.data.defenses || [];
+    if (daysPassed >= DAYS_IN_MONTH) {
+      const db = getDB();
+      await db.read();
 
-    const teamScores = calculateTeamScores(users, attacks, defenses);
-    const logChannelId = db.data.settings?.logChannel;
+      const users = db.data.users || [];
+      const attacks = db.data.attacks || [];
+      const defenses = db.data.defenses || [];
 
-    // Format announcement
-    const entries = Object.entries(teamScores).sort(([, a], [, b]) => b.total - a.total);
-    const totalPoints = entries.reduce((sum, [, data]) => sum + data.total, 0);
+      const teamScores = calculateTeamScores(users, attacks, defenses);
+      const logChannelId = db.data.settings?.logChannel;
 
-    let announcement = '🎉 **Art Fight Event Has Ended!**\n\n';
-    for (const [team, data] of entries) {
-      const percentage = totalPoints ? (data.total / totalPoints) * 100 : 0;
-      const bar = generateProgressBar(percentage);
-      announcement += `🏳️ **${team}** — ${data.total} pts\n${bar} \`${percentage.toFixed(1)}%\`\n\n`;
-    }
+      // Format announcement
+      const entries = Object.entries(teamScores).sort(([, a], [, b]) => b.total - a.total);
+      const totalPoints = entries.reduce((sum, [, data]) => sum + data.total, 0);
 
-    const winner = entries[0]?.[0];
-    if (winner) {
-      announcement += `🏆 **Winner:** **${winner}** with ${teamScores[winner].total} points!\n`;
-    }
-
-    // Send to log channel if set
-    if (logChannelId) {
-      const logChannel = client.channels.cache.get(logChannelId);
-      if (logChannel?.isTextBased()) {
-        logChannel.send(announcement);
+      let announcement = '🎉 **Art Fight Event Has Ended!**\n\n';
+      for (const [team, data] of entries) {
+        const percentage = totalPoints ? (data.total / totalPoints) * 100 : 0;
+        const bar = generateProgressBar(percentage);
+        announcement += `🏳️ **${team}** — ${data.total} pts\n${bar} \`${percentage.toFixed(1)}%\`\n\n`;
       }
+
+      const winner = entries[0]?.[0];
+      if (winner) {
+        announcement += `🏆 **Winner:** **${winner}** with ${teamScores[winner].total} points!\n`;
+      }
+
+      // Send to log channel if set
+      if (logChannelId) {
+        const logChannel = client.channels.cache.get(logChannelId);
+        if (logChannel?.isTextBased()) {
+          logChannel.send(announcement);
+        }
+      }
+
+      // Reset all stored data (except settings)
+      db.data.users = [];
+      db.data.attacks = [];
+      db.data.defenses = [];
+      await db.write();
+
+      console.log('✅ Monthly event reset complete.');
+      daysPassed = 0; // restart month
     }
 
-    // Reset all stored data (except settings)
-    db.data.users = [];
-    db.data.attacks = [];
-    db.data.defenses = [];
-    await db.write();
+    // Wait another day and tick again
+    setTimeout(tick, MS_IN_A_DAY);
+  };
 
-    console.log('✅ Monthly event reset complete.');
-  }, MS_IN_A_MONTH);
+  // Start ticking
+  setTimeout(tick, MS_IN_A_DAY);
 }
