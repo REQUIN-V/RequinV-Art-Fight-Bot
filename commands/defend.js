@@ -9,11 +9,21 @@ export default {
     const db = (await import('../utils/db.js')).getDB();
     await db.read();
 
-    const settings = db.data.settings || {};
+    const guildId = message.guild.id;
+    db.data.servers = db.data.servers || {};
+    db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
+      users: [],
+      attacks: [],
+      defenses: []
+    };
+
+    const serverData = db.data.servers[guildId];
+    const settings = serverData.settings || {};
     const allow18 = settings.allow18 !== false;
 
-    // 🚫 Check if the user is banned
-    const bannedUsers = db.data.settings?.bannedUsers || [];
+    // 🚫 Check if the user is banned (per-server)
+    const bannedUsers = settings.bannedUsers || [];
     if (bannedUsers.some(u => u.id === message.author.id)) {
       return message.reply('🚫 You are banned from participating in this event.');
     }
@@ -58,21 +68,21 @@ export default {
       return message.reply('🔞 Submitting `18+` content is currently disabled by the moderators.');
     }
 
-    const defender = db.data.users.find(u => u.id === defenderId);
+    const defender = serverData.users.find(u => u.id === defenderId);
     if (!defender) return message.reply('❌ You must register a character before defending.');
 
-    const attack = (db.data.attacks || []).find(a => String(a.id) === attackId);
+    const attack = (serverData.attacks || []).find(a => String(a.id) === attackId);
     if (!attack) return message.reply(`❌ No attack found with ID \`${attackId}\`.`);
     if (attack.to !== defenderId) return message.reply('❌ You can only defend against attacks targeting you.');
 
-    db.data.defends = db.data.defends || [];
+    serverData.defenses = serverData.defenses || [];
 
-    const alreadyDefended = db.data.defends.some(d => d.attackId === attack.id && d.from === defenderId);
+    const alreadyDefended = serverData.defenses.some(d => d.attackId === attack.id && d.from === defenderId);
     if (alreadyDefended) {
       return message.reply(`⚠️ You have already submitted a defense for attack ID \`${attackId}\`.`);
     }
 
-    const isDuplicate = db.data.defends.some(d => d.from === defenderId && d.imageUrl === imageUrl);
+    const isDuplicate = serverData.defenses.some(d => d.from === defenderId && d.imageUrl === imageUrl);
     if (isDuplicate) return message.reply('⚠️ You already submitted this image before.');
 
     const cooldownTime = 300_000;
@@ -99,7 +109,7 @@ export default {
       timestamp: new Date().toISOString()
     };
 
-    db.data.defends.push(defend);
+    serverData.defenses.push(defend);
 
     defender.defenses = defender.defenses || [];
     defender.defenses.push({
@@ -150,7 +160,7 @@ export default {
     }
 
     // Log to mod channel
-    const logChannelId = db.data.settings?.logChannel;
+    const logChannelId = settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
       if (logChannel?.isTextBased()) {
