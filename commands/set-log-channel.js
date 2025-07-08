@@ -2,7 +2,7 @@ import { getDB } from '../utils/db.js';
 
 export default {
   name: 'set-log-channel',
-  description: 'Set the current channel as the log channel for attacks (mod-only).',
+  description: 'Set the current channel as the log channel for attacks and defends (mod-only).',
   async execute(message) {
     if (!message.member.permissions.has('ManageGuild')) {
       return message.reply('❌ You do not have permission to use this command.');
@@ -27,6 +27,6 @@ export default {
     db.data.servers[guildId].settings.logChannel = message.channel.id;
     await db.write();
 
-    message.channel.send(`📌 This channel has been set as the **attack log channel** for this server.`);
+    message.channel.send(`📌 This channel has been set as the **log channel** for both attacks and defends.`);
   }
 };
