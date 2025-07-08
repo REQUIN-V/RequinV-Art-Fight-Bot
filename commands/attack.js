@@ -177,9 +177,9 @@ export default {
             .setLabel('🗑️ Delete')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
-            .setCustomId(`reportAttack:${attackId}`)
             .setLabel('🚩 Report')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Link)
+            .setURL('https://report.cybertip.org/reporting')
         );
         logChannel.send({ embeds: [embed], components: [actionRow] });
       }
