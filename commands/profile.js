@@ -15,7 +15,6 @@ export default {
     const guildId = message.guild.id;
     const target = message.mentions.users.first() || message.author;
 
-    // 🛠️ Ensure server structure exists
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
       users: [],
@@ -29,8 +28,7 @@ export default {
 
     const user = server.users.find(u => u.id === target.id);
     if (!user) {
-      await message.reply('❌ This user has not registered a character.');
-      return;
+      return message.reply('❌ This user has not registered a character.');
     }
 
     const allAttacks = server.attacks || [];
@@ -59,7 +57,7 @@ export default {
             `**Defend Points:** ${defendPoints}\n` +
             `**Team Contribution:** ${attackPoints} pts`
           );
-        return embed;
+        return { embed };
       }
 
       if (section === 'characters') {
@@ -72,6 +70,7 @@ export default {
           embed.setDescription(`🆔 ID: \`${char.id || 'unassigned'}\``);
           if (char.imageUrl) embed.setImage(char.imageUrl);
         }
+        return { embed };
       }
 
       if (section === 'attacks') {
@@ -87,7 +86,15 @@ export default {
             (atk.description ? `📝 ${atk.description}` : '')
           );
           embed.setImage(atk.imageUrl);
+          const downloadRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setLabel('📥 Download')
+              .setStyle(ButtonStyle.Link)
+              .setURL(atk.imageUrl)
+          );
+          return { embed, components: [downloadRow] };
         }
+        return { embed };
       }
 
       if (section === 'defends') {
@@ -103,11 +110,19 @@ export default {
             (def.description ? `📝 ${def.description}` : '')
           );
           embed.setImage(def.imageUrl);
+          const downloadRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setLabel('📥 Download')
+              .setStyle(ButtonStyle.Link)
+              .setURL(def.imageUrl)
+          );
+          return { embed, components: [downloadRow] };
         }
+        return { embed };
       }
 
       embed.setFooter({ text: `Page ${page + 1}` });
-      return embed;
+      return { embed };
     };
 
     const makeButtons = () => {
@@ -126,9 +141,11 @@ export default {
       return [sectionRow, navRow];
     };
 
+    const { embed, components } = getEmbed(state.section, state.page);
+
     const sent = await message.channel.send({
-      embeds: [getEmbed(state.section, state.page)],
-      components: makeButtons()
+      embeds: [embed],
+      components: [...makeButtons(), ...(components || [])]
     });
 
     const collector = sent.createMessageComponentCollector({ time: 5 * 60 * 1000 });
@@ -146,11 +163,11 @@ export default {
       if (interaction.customId === 'page:next') state.page += 1;
       if (interaction.customId === 'page:prev' && state.page > 0) state.page -= 1;
 
+      const { embed: newEmbed, components: extraButtons } = getEmbed(state.section, state.page);
       await interaction.update({
-        embeds: [getEmbed(state.section, state.page)],
-        components: makeButtons()
+        embeds: [newEmbed],
+        components: [...makeButtons(), ...(extraButtons || [])]
       });
     });
   }
 };
-
