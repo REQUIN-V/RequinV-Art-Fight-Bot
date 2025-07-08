@@ -123,6 +123,11 @@ export default {
 
     await db.write();
 
+    // Check if original attacker has filtered this tag
+    const originalAttacker = serverData.users.find(u => u.id === attack.from);
+    const filteredTags = originalAttacker?.filteredTags || [];
+    const isFiltered = filteredTags.includes(tag);
+
     const embed = {
       title: `🛡️ Defense by ${message.author.username}`,
       description:
@@ -133,9 +138,12 @@ export default {
         (description ? `📝 ${description}\n` : '') +
         `🆔 Defend ID: \`${defendId}\``,
       color: 0x8bd3ff,
-      image: { url: imageUrl },
       footer: { text: 'Use the Defend ID if you want to delete or report it.' }
     };
+
+    if (!isFiltered) {
+      embed.image = { url: imageUrl };
+    }
 
     const downloadRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -149,7 +157,8 @@ export default {
     try {
       const attackerUser = await message.client.users.fetch(attack.from);
       await attackerUser.send({
-        content: `🛡️ You were defended against by **${message.author.username}**! Download the defense art below:`,
+        content: `🛡️ You were defended against by **${message.author.username}**!` +
+          (isFiltered ? `\n⚠️ The image is hidden due to your tag filter (${tag}). Click to download:` : ''),
         embeds: [embed],
         components: [downloadRow]
       });
