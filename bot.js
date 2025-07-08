@@ -6,7 +6,26 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { startMonthlyTimer } from './utils/timer.js';
 
-// ✅ Use a hardcoded or Render-injected token (dotenv removed)
+// Load config.json if exists (used for Gist backup)
+let GIST_ID = null;
+let GITHUB_TOKEN = null;
+
+try {
+  const configPath = path.resolve(process.cwd(), 'config.json');
+  if (fs.existsSync(configPath)) {
+    const localConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    GIST_ID = localConfig.GIST_ID;
+    GITHUB_TOKEN = localConfig.GITHUB_TOKEN;
+    console.log('🧪 Loaded local config.json for Gist backup.');
+  }
+} catch (err) {
+  console.warn('⚠️ Failed to load config.json:', err);
+}
+
+// Export tokens globally if needed elsewhere
+export const GIST_CONFIG = { GIST_ID, GITHUB_TOKEN };
+
+// ✅ Token is still pulled from Render's env vars
 const config = {
   token: process.env.DISCORD_TOKEN,
   prefix: '!'
@@ -61,3 +80,4 @@ client.on(Events.MessageCreate, async message => {
 
 // Login the bot using token from environment (Render handles this)
 client.login(config.token);
+
