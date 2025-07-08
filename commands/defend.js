@@ -62,7 +62,6 @@ export default {
     ) return message.reply('❌ Only image files are allowed. No audio or video files.');
 
     if (!allowedTags.includes(tag)) return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
-
     if (!allow18 && tag === '18+') {
       return message.reply('🔞 Submitting `18+` content is currently disabled by the moderators.');
     }
@@ -123,7 +122,6 @@ export default {
 
     await db.write();
 
-    // Check if original attacker has filtered this tag
     const originalAttacker = serverData.users.find(u => u.id === attack.from);
     const filteredTags = originalAttacker?.filteredTags || [];
     const isFiltered = filteredTags.includes(tag);
@@ -176,12 +174,13 @@ export default {
             .setLabel('🗑️ Delete')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
-            .setCustomId(`reportDefend:${defendId}`)
             .setLabel('🚩 Report')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Link)
+            .setURL('https://report.cybertip.org/reporting')
         );
         await logChannel.send({ embeds: [embed], components: [row] });
       }
     }
   }
 };
+
