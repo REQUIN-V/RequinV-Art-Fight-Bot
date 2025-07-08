@@ -25,7 +25,6 @@ export default {
       return message.reply('🚫 There is no active event right now. You cannot submit attacks.');
     }
 
-    // ❌ Check if user is banned from the event
     const bannedUsers = serverData.settings?.bannedUsers || [];
     if (bannedUsers.some(u => u.id === message.author.id)) {
       return message.reply('🚫 You are banned from participating in this event.');
@@ -34,7 +33,7 @@ export default {
     const authorId = message.author.id;
     const mention = message.mentions.users.first();
     if (!mention) return message.reply('❌ Usage: !attack @user <type> <tag> [description] (attach image)');
-    args.shift(); // Remove @mention
+    args.shift(); // remove @mention
 
     const type = args[0]?.toLowerCase();
     const tag = args[1]?.toLowerCase();
@@ -44,11 +43,14 @@ export default {
     const contentType = attachment?.contentType || '';
 
     const allowedTypes = {
-      sketch: 2,
-      basic: 5,
-      'full-render': 10,
-      animation: 15,
-      wip: 1
+      wip: 50,
+      doodle: 100,
+      sketch: 200,
+      lineart: 300,
+      lineless: 400,
+      'half body render': 500,
+      'full body render': 600,
+      animated: 700
     };
 
     const allowedTags = ['sfw', 'nsfw', 'gore', '18+', 'spoiler'];
@@ -139,20 +141,20 @@ export default {
       footer: { text: 'Use the Attack ID if you want to delete or report it.' }
     };
 
-    await message.channel.send({ embeds: [embed] });
+    const downloadRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel('📥 Download')
+        .setStyle(ButtonStyle.Link)
+        .setURL(imageUrl)
+    );
+
+    await message.channel.send({ embeds: [embed], components: [downloadRow] });
 
     try {
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel('📥 Download Attack Art')
-          .setStyle(ButtonStyle.Link)
-          .setURL(imageUrl)
-      );
-
       await mention.send({
         content: `🎯 You were attacked by **${message.author.username}**! Download the art below if you want to retaliate:`,
         embeds: [embed],
-        components: [row]
+        components: [downloadRow]
       });
     } catch (e) {
       console.warn(`Could not DM user ${mention.username}`);
