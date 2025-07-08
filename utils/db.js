@@ -1,30 +1,43 @@
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
+// Determine __dirname in ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbFile = path.resolve(process.cwd(), 'data/db.json');  // Global persistent location
+
+// Create a persistent directory for data if it doesn't exist
+const dataDir = path.resolve(__dirname, '../data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Define path to persistent db.json file
+const dbFile = path.join(dataDir, 'db.json');
+
+// Setup JSON adapter and database
 const adapter = new JSONFile(dbFile);
 const db = new Low(adapter);
 
-// Initialize DB structure
+// Ensure DB is loaded and initialized
 await db.read();
-db.data ||= { servers: {} }; // Multi-server data scoped by guildId
+db.data ||= { servers: {} };
 await db.write();
 
 /**
- * Returns the full database instance.
+ * Get full DB instance (lowdb)
  */
 export const getDB = () => db;
 
 /**
- * Returns and initializes a specific server (guild)'s scoped data object.
- * @param {string} guildId - The ID of the Discord server
- * @returns {object} serverData - The server-specific data object
+ * Get or initialize scoped server data
+ * @param {string} guildId - Discord server ID
+ * @returns {Promise<Object>} Server-specific data object
  */
 export const getServerData = async (guildId) => {
   await db.read();
+
   db.data.servers ||= {};
   db.data.servers[guildId] ||= {
     users: [],
@@ -33,7 +46,7 @@ export const getServerData = async (guildId) => {
     settings: {},
     teams: {}
   };
+
   await db.write();
   return db.data.servers[guildId];
 };
-
