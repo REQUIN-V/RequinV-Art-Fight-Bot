@@ -2,37 +2,36 @@ import { getDB } from '../utils/db.js';
 
 export default {
   name: 'set-event-teams',
-  description: 'Set team names for the current event (mod-only). Usage: !set-event-teams TeamA TeamB',
+  description: 'Set team names for the current event.',
   async execute(message, args) {
     if (!message.member.permissions.has('ManageGuild')) {
-      return message.reply('❌ You do not have permission to use this command.');
-    }
-
-    if (args.length < 2) {
-      return message.reply('❌ Usage: !set-event-teams TeamA TeamB');
+      return message.reply('❌ You don’t have permission to use this command.');
     }
 
     const [teamA, teamB] = args;
-    const guildId = message.guild.id;
+    if (!teamA || !teamB) {
+      return message.reply('❌ Usage: `!set-event-teams <teamA> <teamB>`');
+    }
 
     const db = getDB();
     await db.read();
 
+    const guildId = message.guild.id;
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
       users: [],
       attacks: [],
       defends: [],
-      settings: {},
-      teams: []
     };
 
-    const server = db.data.servers[guildId];
-    server.teams = [teamA, teamB];
-    server.settings.currentEvent = `${teamA} vs ${teamB}`;
+    db.data.servers[guildId].settings.teams = {
+      teamA,
+      teamB
+    };
 
     await db.write();
 
-    message.channel.send(`✅ Current event teams set to: **${teamA}** and **${teamB}**!`);
+    return message.reply(`✅ Set team names: **${teamA}** and **${teamB}**`);
   }
 };
