@@ -22,7 +22,6 @@ export default {
     const settings = serverData.settings || {};
     const allow18 = settings.allow18 !== false;
 
-    // 🚫 Check if the user is banned (per-server)
     const bannedUsers = settings.bannedUsers || [];
     if (bannedUsers.some(u => u.id === message.author.id)) {
       return message.reply('🚫 You are banned from participating in this event.');
@@ -138,28 +137,26 @@ export default {
       footer: { text: 'Use the Defend ID if you want to delete or report it.' }
     };
 
-    await message.channel.send({ embeds: [embed] });
+    const downloadRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel('📥 Download Defense Art')
+        .setStyle(ButtonStyle.Link)
+        .setURL(imageUrl)
+    );
 
-    // DM the original attacker with a download button
+    await message.channel.send({ embeds: [embed], components: [downloadRow] });
+
     try {
-      const downloadRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel('📥 Download Defense Art')
-          .setStyle(ButtonStyle.Link)
-          .setURL(imageUrl)
-      );
-
       const attackerUser = await message.client.users.fetch(attack.from);
       await attackerUser.send({
-        content: `🛡️ You were defended against by **${message.author.username}**! Download the defense art below if you'd like to retaliate:`,
+        content: `🛡️ You were defended against by **${message.author.username}**! Download the defense art below:`,
         embeds: [embed],
         components: [downloadRow]
       });
     } catch (err) {
-      console.warn('Could not DM original attacker.');
+      console.warn('⚠️ Could not DM original attacker.');
     }
 
-    // Log to mod channel
     const logChannelId = settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
