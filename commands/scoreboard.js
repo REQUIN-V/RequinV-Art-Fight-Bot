@@ -9,7 +9,6 @@ export default {
 
     const guildId = message.guild.id;
 
-    // Initialize and access server-specific data
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
       users: [],
@@ -20,41 +19,29 @@ export default {
     };
 
     const server = db.data.servers[guildId];
+    const { attacks = [], defends = [], users = [], settings = {} } = server;
 
-    const attacks = server.attacks || [];
-    const defenses = server.defends || [];
-    const users = server.users || [];
-    const settings = server.settings || {};
-    const teams = settings.teams || [];
+    const teamA = settings.teams?.teamA || 'Team A';
+    const teamB = settings.teams?.teamB || 'Team B';
 
-    const teamScores = {};
+    const teamScores = {
+      [teamA]: 0,
+      [teamB]: 0
+    };
 
-    // Initialize team scores
-    for (const team of teams) {
-      teamScores[team] = 0;
-    }
-
-    // Tally attack + defend points per team
     for (const user of users) {
       if (!user.team || !teamScores.hasOwnProperty(user.team)) continue;
 
-      const attackPoints = attacks
-        .filter(a => a.from === user.id)
-        .reduce((sum, a) => sum + a.points, 0);
-
-      const defendPoints = defenses
-        .filter(d => d.from === user.id)
-        .reduce((sum, d) => sum + d.points, 0);
+      const attackPoints = attacks.filter(a => a.from === user.id).reduce((sum, a) => sum + a.points, 0);
+      const defendPoints = defends.filter(d => d.from === user.id).reduce((sum, d) => sum + d.points, 0);
 
       teamScores[user.team] += attackPoints + defendPoints;
     }
 
-    const [teamA = 'Team A', teamB = 'Team B'] = teams;
     const scoreA = teamScores[teamA] || 0;
     const scoreB = teamScores[teamB] || 0;
     const total = scoreA + scoreB;
 
-    // Progress bar generation
     const percentA = total === 0 ? 50 : (scoreA / total) * 100;
     const percentB = 100 - percentA;
 
@@ -64,10 +51,8 @@ export default {
 
     const whiteBlock = '⬜'; // Team A
     const pinkBlock = '🩷'; // Team B
-
     const bar = whiteBlock.repeat(barsA) + pinkBlock.repeat(barsB);
 
-    // Embed construction
     const embed = {
       title: '📊 Live Team Scoreboard',
       color: 0xff9ecb,
