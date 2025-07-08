@@ -1,12 +1,13 @@
 import fs from 'fs';
-import fetch from 'node-fetch'; // Install with: npm i node-fetch
 import path from 'path';
-import { GIST_CONFIG } from '../bot.js';
+import { fileURLToPath } from 'url';
 
-const dbPath = path.resolve(process.cwd(), 'data/db.json');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dbPath = path.resolve(__dirname, '../data/db.json');
 
 export async function backupToGist() {
-  const { GIST_ID, GITHUB_TOKEN } = GIST_CONFIG;
+  const GIST_ID = process.env.GIST_ID;
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
   if (!GIST_ID || !GITHUB_TOKEN) {
     console.warn('⚠️ Missing GIST_ID or GITHUB_TOKEN. Skipping Gist backup.');
@@ -25,8 +26,9 @@ export async function backupToGist() {
     const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
       method: 'PATCH',
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github+json'
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
       },
       body: JSON.stringify({
         files: {
@@ -47,3 +49,4 @@ export async function backupToGist() {
     console.error('❌ Gist backup failed:', err.message);
   }
 }
+
