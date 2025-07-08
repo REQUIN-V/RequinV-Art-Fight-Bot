@@ -1,4 +1,5 @@
 import { getDB } from '../utils/db.js';
+import { backupToGist } from '../utils/gist-backup.js';
 
 export default {
   name: 'stop-event',
@@ -50,8 +51,12 @@ export default {
 
     await db.write();
 
+    // 🔁 Optional: Backup the newly wiped data to Gist
+    await backupToGist();
+
     message.channel.send(
       '🛑 The event has been manually stopped.\nAll user data has been wiped, but final scores were preserved for the scoreboard.'
     );
   }
 };
+
