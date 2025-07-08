@@ -1,4 +1,5 @@
 import { getDB } from '../utils/db.js';
+import { backupToGist } from '../utils/gist-backup.js';
 
 export default {
   name: 'reset-scoreboard',
@@ -24,6 +25,9 @@ export default {
 
     const server = db.data.servers[guildId];
 
+    // 🔐 Backup before clearing data
+    await backupToGist();
+
     // Clear attack and defense data
     server.attacks = [];
     server.defends = [];
@@ -39,3 +43,4 @@ export default {
     message.channel.send('✅ Scoreboard has been reset for the next event. All attacks and defenses cleared.');
   }
 };
+
