@@ -5,7 +5,7 @@ export default {
   description: 'Show all available user commands.',
   async execute(message) {
     const embed = new EmbedBuilder()
-      .setTitle('🖌️ Profic Art Royal Bot – Commands Guide')
+      .setTitle('🖌️🌸 Profic Art Fight – Commands Guide')
       .setColor(0xff9ecb)
       .setDescription(
         '📘 You can view the full bot documentation and usage guide here:\n' +
