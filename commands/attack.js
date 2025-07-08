@@ -128,6 +128,9 @@ export default {
 
     await db.write();
 
+    const filteredTags = target.filteredTags || [];
+    const isFiltered = filteredTags.includes(tag);
+
     const embed = {
       title: `🎯 Attack by ${message.author.username}`,
       description:
@@ -137,9 +140,12 @@ export default {
         (description ? `📝 ${description}\n` : '') +
         `🆔 Attack ID: \`${attackId}\``,
       color: 0xff9ecb,
-      image: { url: imageUrl },
       footer: { text: 'Use the Attack ID if you want to delete or report it.' }
     };
+
+    if (!isFiltered) {
+      embed.image = { url: imageUrl };
+    }
 
     const downloadRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -152,7 +158,8 @@ export default {
 
     try {
       await mention.send({
-        content: `🎯 You were attacked by **${message.author.username}**! Download the art below if you want to retaliate:`,
+        content: `🎯 You were attacked by **${message.author.username}**! Download the art below if you want to retaliate:` +
+          (isFiltered ? `\n⚠️ This image was hidden due to your filter settings (${tag}).` : ''),
         embeds: [embed],
         components: [downloadRow]
       });
