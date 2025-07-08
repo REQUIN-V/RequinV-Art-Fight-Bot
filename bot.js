@@ -1,5 +1,3 @@
-// Load environment variables from .env file
-import 'dotenv/config';
 import './ping.js';
 
 import { Client, GatewayIntentBits, Collection, Events } from 'discord.js';
@@ -7,9 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startMonthlyTimer } from './utils/timer.js';
-import { connectToDatabase } from './utils/database.js'; // ✅ MongoDB connection
 
-// Load config from environment
+// ✅ Use a hardcoded or Render-injected token (dotenv removed)
 const config = {
   token: process.env.DISCORD_TOKEN,
   prefix: '!'
@@ -37,14 +34,9 @@ for (const file of commandFiles) {
 }
 
 // When bot is ready
-client.once(Events.ClientReady, async () => {
+client.once(Events.ClientReady, () => {
   console.log(`🤖 Bot is online as ${client.user.tag}`);
-
-  // 🗄️ Connect to MongoDB
-  await connectToDatabase();
-
-  // ⏳ Start the monthly event timer
-  startMonthlyTimer(client);
+  startMonthlyTimer(client); // ⏳ Start the monthly timer
 });
 
 // Message command handler
@@ -58,7 +50,6 @@ client.on(Events.MessageCreate, async message => {
   if (!command) return;
 
   try {
-    // Pass client and guild ID to command
     await command.execute(message, args, client, message.guild.id);
   } catch (error) {
     console.error(`❌ Error running ${commandName}:`, error);
@@ -68,5 +59,5 @@ client.on(Events.MessageCreate, async message => {
   }
 });
 
-// Login the bot
+// Login the bot using token from environment (Render handles this)
 client.login(config.token);
