@@ -28,7 +28,8 @@ export default {
 
     const user = server.users.find(u => u.id === target.id);
     if (!user) {
-      return message.reply('❌ This user has not registered a character.');
+      await message.reply('❌ This user has not registered a character.');
+      return;
     }
 
     const allAttacks = server.attacks || [];
@@ -57,6 +58,7 @@ export default {
             `**Defend Points:** ${defendPoints}\n` +
             `**Team Contribution:** ${attackPoints} pts`
           );
+        embed.setFooter({ text: `Page ${page + 1}` });
         return { embed };
       }
 
@@ -70,6 +72,7 @@ export default {
           embed.setDescription(`🆔 ID: \`${char.id || 'unassigned'}\``);
           if (char.imageUrl) embed.setImage(char.imageUrl);
         }
+        embed.setFooter({ text: `Page ${page + 1}` });
         return { embed };
       }
 
@@ -78,6 +81,8 @@ export default {
         const atk = attacks[page];
         if (!atk) {
           embed.setTitle('🏹 No more attacks.').setDescription('Try a different page.');
+          embed.setFooter({ text: `Page ${page + 1}` });
+          return { embed };
         } else {
           embed.setTitle(`🏹 Attack ID: ${atk.id}`);
           embed.setDescription(
@@ -86,6 +91,8 @@ export default {
             (atk.description ? `📝 ${atk.description}` : '')
           );
           embed.setImage(atk.imageUrl);
+          embed.setFooter({ text: `Page ${page + 1}` });
+
           const downloadRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
               .setLabel('📥 Download')
@@ -94,7 +101,6 @@ export default {
           );
           return { embed, components: [downloadRow] };
         }
-        return { embed };
       }
 
       if (section === 'defends') {
@@ -102,6 +108,8 @@ export default {
         const def = defends[page];
         if (!def) {
           embed.setTitle('🛡️ No more defenses.').setDescription('Try a different page.');
+          embed.setFooter({ text: `Page ${page + 1}` });
+          return { embed };
         } else {
           embed.setTitle(`🛡️ Defense ID: ${def.id}`);
           embed.setDescription(
@@ -110,6 +118,8 @@ export default {
             (def.description ? `📝 ${def.description}` : '')
           );
           embed.setImage(def.imageUrl);
+          embed.setFooter({ text: `Page ${page + 1}` });
+
           const downloadRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
               .setLabel('📥 Download')
@@ -118,7 +128,6 @@ export default {
           );
           return { embed, components: [downloadRow] };
         }
-        return { embed };
       }
 
       embed.setFooter({ text: `Page ${page + 1}` });
@@ -163,10 +172,10 @@ export default {
       if (interaction.customId === 'page:next') state.page += 1;
       if (interaction.customId === 'page:prev' && state.page > 0) state.page -= 1;
 
-      const { embed: newEmbed, components: extraButtons } = getEmbed(state.section, state.page);
+      const { embed: newEmbed, components: newComponents } = getEmbed(state.section, state.page);
       await interaction.update({
         embeds: [newEmbed],
-        components: [...makeButtons(), ...(extraButtons || [])]
+        components: [...makeButtons(), ...(newComponents || [])]
       });
     });
   }
