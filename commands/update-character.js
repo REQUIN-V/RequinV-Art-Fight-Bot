@@ -7,7 +7,7 @@ export default {
 
     const guildId = message.guild.id;
     const userId = message.author.id;
-    const charId = args[0];
+    const charId = args[0]?.trim();
 
     if (!charId) {
       return message.reply('❌ Usage: !update-character <id> [new name] (attach new image)');
@@ -32,15 +32,15 @@ export default {
     db.data.servers[guildId] = db.data.servers[guildId] || {
       users: [],
       attacks: [],
-      defends: [],
+      defenses: [],
       settings: {},
       teams: {}
     };
 
     const server = db.data.servers[guildId];
-
     const user = server.users.find(u => u.id === userId);
-    if (!user || !user.characters || user.characters.length === 0) {
+
+    if (!user || !Array.isArray(user.characters) || user.characters.length === 0) {
       return message.reply('❌ You don’t have any registered characters.');
     }
 
@@ -58,6 +58,14 @@ export default {
 
     await db.write();
 
-    return message.channel.send(`✅ Character \`${charId}\` updated successfully!`);
+    return message.channel.send({
+      content: `✅ Character \`${charId}\` updated successfully!`,
+      embeds: [{
+        title: `🛠️ Updated Character`,
+        description: `📛 **Name:** ${character.name}\n🆔 **ID:** \`${character.id}\``,
+        color: 0x93c5fd,
+        image: imageUrl ? { url: character.imageUrl } : undefined
+      }]
+    });
   }
 };
