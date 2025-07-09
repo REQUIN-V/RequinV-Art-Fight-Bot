@@ -21,58 +21,45 @@ export default {
     const server = db.data.servers[guildId];
     const { attacks = [], defends = [], users = [], settings = {} } = server;
 
-    // Pull saved team names or fallback
-    const teamLabelA = settings.teams?.teamA || 'Team A';
-    const teamLabelB = settings.teams?.teamB || 'Team B';
+    const definedTeams = Object.values(settings.teams || {});
+    if (definedTeams.length === 0) {
+      return message.reply('⚠️ No teams have been defined yet. Use `!set-event-teams <TeamA> <TeamB>` first.');
+    }
 
-    // Initialize score table using label keys
-    const teamScores = {
-      [teamLabelA]: 0,
-      [teamLabelB]: 0
-    };
+    // Initialize scores for all teams
+    const teamScores = {};
+    for (const team of definedTeams) {
+      teamScores[team] = 0;
+    }
 
-    // Score tally
+    // Tally user scores per team
     for (const user of users) {
-      const team = user.team;
-      if (!team) continue;
-
-      const isTeamA = team === teamLabelA;
-      const isTeamB = team === teamLabelB;
-
-      if (!isTeamA && !isTeamB) continue;
+      if (!user.team || !definedTeams.includes(user.team)) continue;
 
       const attackPoints = attacks.filter(a => a.from === user.id).reduce((sum, a) => sum + a.points, 0);
       const defendPoints = defends.filter(d => d.from === user.id).reduce((sum, d) => sum + d.points, 0);
       const totalPoints = attackPoints + defendPoints;
 
-      if (isTeamA) teamScores[teamLabelA] += totalPoints;
-      if (isTeamB) teamScores[teamLabelB] += totalPoints;
+      teamScores[user.team] += totalPoints;
     }
 
-    const scoreA = teamScores[teamLabelA] || 0;
-    const scoreB = teamScores[teamLabelB] || 0;
-    const total = scoreA + scoreB;
+    const totalPoints = Object.values(teamScores).reduce((sum, val) => sum + val, 0) || 1; // Avoid divide by 0
 
-    const percentA = total === 0 ? 50 : (scoreA / total) * 100;
-    const percentB = 100 - percentA;
-
+    // Bar chart rendering
     const totalBars = 20;
-    const barsA = Math.round((percentA / 100) * totalBars);
-    const barsB = totalBars - barsA;
-
-    const whiteBlock = '⬜'; // Team A
-    const pinkBlock = '🩷'; // Team B
-    const bar = whiteBlock.repeat(barsA) + pinkBlock.repeat(barsB);
+    const barColors = ['⬜', '🩷', '🟦', '🟨', '🟩', '🟪', '🟥']; // Unique blocks per team
+    const bar = Object.entries(teamScores)
+      .map(([team, score], i) => {
+        const percent = (score / totalPoints) * 100;
+        const bars = Math.round((percent / 100) * totalBars);
+        return `${barColors[i % barColors.length].repeat(bars)} ${team} — ${score} pts (${percent.toFixed(1)}%)`;
+      })
+      .join('\n');
 
     const embed = {
       title: '📊 Live Team Scoreboard',
       color: 0xff9ecb,
-      description:
-        `🏳️ **${teamLabelA}** — ${scoreA} pts\n` +
-        `🏳️ **${teamLabelB}** — ${scoreB} pts\n\n` +
-        bar + `\n\n` +
-        `⬜ ${teamLabelA} — ${percentA.toFixed(1)}%\n` +
-        `🩷 ${teamLabelB} — ${percentB.toFixed(1)}%`,
+      description: bar,
       footer: { text: 'Updated live as attacks/defenses are submitted.' }
     };
 
