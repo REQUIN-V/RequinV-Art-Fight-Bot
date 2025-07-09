@@ -14,39 +14,34 @@ export default {
       users: [],
       attacks: [],
       defends: [],
-      settings: {}
+      settings: {},
+      teams: {}
     };
 
     const server = db.data.servers[guildId];
     const { attacks = [], defends = [], users = [], settings = {} } = server;
 
-    const teams = settings.teams || {};
-    const teamNames = [teams.teamA, teams.teamB].filter(Boolean);
-
-    if (teamNames.length < 2) {
+    const teamsObj = settings.teams;
+    if (!teamsObj || !teamsObj.teamA || !teamsObj.teamB) {
       return message.reply('⚠️ No teams have been defined yet. Use `!set-event-teams <TeamA> <TeamB>` first.');
     }
 
-    const teamScores = {};
-    for (const team of teamNames) {
-      teamScores[team] = 0;
-    }
+    const definedTeams = [teamsObj.teamA, teamsObj.teamB];
+    const teamScores = Object.fromEntries(definedTeams.map(t => [t, 0]));
 
     for (const user of users) {
-      const team = user.team;
-      if (!team || !teamNames.includes(team)) continue;
+      const { team } = user;
+      if (!team || !definedTeams.includes(team)) continue;
 
       const attackPoints = attacks.filter(a => a.from === user.id).reduce((sum, a) => sum + a.points, 0);
       const defendPoints = defends.filter(d => d.from === user.id).reduce((sum, d) => sum + d.points, 0);
-      const totalPoints = attackPoints + defendPoints;
-
-      teamScores[team] += totalPoints;
+      teamScores[team] += attackPoints + defendPoints;
     }
 
-    const totalPoints = Object.values(teamScores).reduce((sum, val) => sum + val, 0) || 1;
-
+    const totalPoints = Object.values(teamScores).reduce((a, b) => a + b, 0) || 1;
     const totalBars = 20;
-    const barColors = ['⬜', '🩷', '🟦', '🟨', '🟩', '🟪', '🟥'];
+    const barColors = ['⬜', '🩷'];
+
     const bar = Object.entries(teamScores)
       .map(([team, score], i) => {
         const percent = (score / totalPoints) * 100;
@@ -66,6 +61,6 @@ export default {
       embed.image = { url: settings.sharedScoreboardBanner };
     }
 
-    message.channel.send({ embeds: [embed] });
+    return message.channel.send({ embeds: [embed] });
   }
 };
