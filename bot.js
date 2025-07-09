@@ -22,10 +22,8 @@ try {
   console.warn('⚠️ Failed to load config.json:', err);
 }
 
-// Export tokens globally if needed elsewhere
 export const GIST_CONFIG = { GIST_ID, GITHUB_TOKEN };
 
-// ✅ Token is still pulled from Render's env vars
 const config = {
   token: process.env.DISCORD_TOKEN,
   prefix: '!'
@@ -37,12 +35,10 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Resolve current file path
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-// Dynamically import commands
 for (const file of commandFiles) {
   const command = await import(`./commands/${file}`);
   if (!command?.default?.name) {
@@ -52,13 +48,11 @@ for (const file of commandFiles) {
   client.commands.set(command.default.name, command.default);
 }
 
-// When bot is ready
 client.once(Events.ClientReady, () => {
   console.log(`🤖 Bot is online as ${client.user.tag}`);
   startMonthlyTimer(client); // ⏳ Start the monthly timer
 });
 
-// Message command handler
 client.on(Events.MessageCreate, async message => {
   if (!message.content.startsWith(config.prefix) || message.author.bot || !message.guild) return;
 
@@ -78,6 +72,25 @@ client.on(Events.MessageCreate, async message => {
   }
 });
 
-// Login the bot using token from environment (Render handles this)
-client.login(config.token);
+// 🧹 Log moderation button handler (delete log embed)
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isButton()) return;
 
+  const [action, type, id] = interaction.customId.split(':');
+
+  if (action === 'deleteLog' && (type === 'attack' || type === 'defend')) {
+    if (!interaction.memberPermissions.has('ManageMessages')) {
+      return interaction.reply({ content: '❌ You do not have permission to delete this.', ephemeral: true });
+    }
+
+    try {
+      await interaction.message.delete();
+      await interaction.reply({ content: `🗑️ ${type === 'attack' ? 'Attack' : 'Defense'} log deleted.`, ephemeral: true });
+    } catch (err) {
+      console.error('❌ Failed to delete log message:', err);
+      await interaction.reply({ content: '⚠️ Failed to delete log message.', ephemeral: true });
+    }
+  }
+});
+
+client.login(config.token);
