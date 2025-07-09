@@ -39,8 +39,13 @@ export default {
     const tag = args[1]?.toLowerCase();
     const description = args.slice(2).join(' ') || '';
     const attachment = message.attachments.first();
-    const imageUrl = attachment?.url;
-    const contentType = attachment?.contentType || '';
+
+    if (!attachment || !attachment.url || !attachment.contentType) {
+      return message.reply('❌ Please attach a valid image file (PNG, JPG, JPEG, etc).');
+    }
+
+    const imageUrl = attachment.url;
+    const contentType = attachment.contentType;
 
     const allowedTypes = {
       wip: 50,
@@ -67,7 +72,9 @@ export default {
       contentType.startsWith('audio/') ||
       contentType.startsWith('video/') ||
       contentType === 'application/octet-stream'
-    ) return message.reply('❌ Only image files are allowed. No audio or video files.');
+    ) {
+      return message.reply('❌ Only image files are allowed. No audio, video, or raw files.');
+    }
 
     if (tag === '18+' && serverData.settings?.allow18 === false) {
       return message.reply('🚫 Submitting content tagged as `18+` is currently disabled for this event.');
@@ -164,7 +171,7 @@ export default {
         components: [downloadRow]
       });
     } catch (e) {
-      console.warn(`Could not DM user ${mention.username}`);
+      console.warn(`⚠️ Could not DM user ${mention.username}:`, e.message);
     }
 
     const logChannelId = serverData.settings?.logChannel;
@@ -186,3 +193,4 @@ export default {
     }
   }
 };
+
