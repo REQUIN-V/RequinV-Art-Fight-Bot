@@ -65,7 +65,7 @@ export default {
     }
 
     if (tag === '18+' && serverData.settings?.allow18 === false) {
-      return message.reply('🚫 Submitting content tagged as `18+` is disabled.');
+      return message.reply('🚫 Submitting content tagged as \`18+\` is disabled.');
     }
 
     const attacker = serverData.users.find(u => u.id === authorId);
@@ -122,7 +122,10 @@ export default {
     if (!isFiltered) embed.image = { url: imageUrl };
 
     const downloadRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setLabel('📥 Download').setStyle(ButtonStyle.Link).setURL(imageUrl)
+      new ButtonBuilder()
+        .setLabel('📥 Download')
+        .setStyle(ButtonStyle.Link)
+        .setURL(imageUrl)
     );
 
     await message.channel.send({ embeds: [embed], components: [downloadRow] });
@@ -137,13 +140,14 @@ export default {
       console.warn(`⚠️ Couldn't DM ${mention.username}:`, e.message);
     }
 
+    // 🧾 Log channel support with delete/report buttons
     const logChannelId = serverData.settings?.logChannel;
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
       if (logChannel?.isTextBased()) {
-        const row = new ActionRowBuilder().addComponents(
+        const modRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`deleteAttack:${attackId}`)
+            .setCustomId(`deleteLog:attack:${attackId}`)
             .setLabel('🗑️ Delete')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
@@ -151,10 +155,9 @@ export default {
             .setStyle(ButtonStyle.Link)
             .setURL('https://report.cybertip.org/reporting')
         );
-        await logChannel.send({ embeds: [embed], components: [row] });
+
+        await logChannel.send({ embeds: [embed], components: [modRow] });
       }
     }
   }
 };
-
-
