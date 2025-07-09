@@ -21,24 +21,22 @@ export default {
     const server = db.data.servers[guildId];
     const { attacks = [], defends = [], users = [], settings = {} } = server;
 
-    const teamsObj = settings.teams || {};
-    const teamA = teamsObj.teamA?.trim();
-    const teamB = teamsObj.teamB?.trim();
+    // ✅ Properly handle array-based team storage
+    const definedTeams = Array.isArray(settings.teams) ? settings.teams.map(t => t.trim()) : [];
 
-    if (!teamA || !teamB) {
+    if (definedTeams.length !== 2) {
       return message.reply('⚠️ No teams have been defined yet. Use `!set-event-teams <TeamA> <TeamB>` first.');
     }
 
-    const definedTeams = [teamA, teamB];
-    const teamScores = Object.fromEntries(definedTeams.map(t => [t, 0]));
+    const teamScores = Object.fromEntries(definedTeams.map(team => [team, 0]));
 
     for (const user of users) {
       const { team } = user;
-      if (!team || !definedTeams.includes(team.trim())) continue;
+      if (!team || !definedTeams.includes(team)) continue;
 
       const attackPoints = attacks.filter(a => a.from === user.id).reduce((sum, a) => sum + a.points, 0);
       const defendPoints = defends.filter(d => d.from === user.id).reduce((sum, d) => sum + d.points, 0);
-      teamScores[team.trim()] += attackPoints + defendPoints;
+      teamScores[team] += attackPoints + defendPoints;
     }
 
     const totalPoints = Object.values(teamScores).reduce((a, b) => a + b, 0) || 1;
@@ -67,4 +65,3 @@ export default {
     return message.channel.send({ embeds: [embed] });
   }
 };
-
