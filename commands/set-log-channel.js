@@ -8,7 +8,12 @@ export default {
       return message.reply('❌ You do not have permission to use this command.');
     }
 
+    const channel = message.channel;
     const guildId = message.guild.id;
+
+    if (!channel.isTextBased?.()) {
+      return message.reply('❌ This channel is not a text-based channel.');
+    }
 
     const db = getDB();
     await db.read();
@@ -23,10 +28,16 @@ export default {
       teams: []
     };
 
-    // Set log channel for this server
-    db.data.servers[guildId].settings.logChannel = message.channel.id;
+    // Set log channel ID
+    db.data.servers[guildId].settings.logChannel = channel.id;
     await db.write();
 
-    message.channel.send(`📌 This channel has been set as the **log channel** for both attacks and defends.`);
+    return message.channel.send({
+      embeds: [{
+        title: '✅ Log Channel Set',
+        description: `All future attack/defend mod logs will now appear in this channel.`,
+        color: 0xff9ecb
+      }]
+    });
   }
 };
