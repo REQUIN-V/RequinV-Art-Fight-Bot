@@ -25,10 +25,8 @@ export default {
       defends: [],
     };
 
-    db.data.servers[guildId].settings.teams = {
-      teamA,
-      teamB
-    };
+    // Store as a flat array, not an object
+    db.data.servers[guildId].settings.teams = [teamA.trim(), teamB.trim()];
 
     await db.write();
 
