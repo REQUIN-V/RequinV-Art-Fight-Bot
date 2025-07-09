@@ -8,7 +8,7 @@ export default {
 
     const attackId = parseInt(args[0], 10);
     if (isNaN(attackId)) {
-      return message.reply('Usage: !delete-attack <attackID>');
+      return message.reply('❌ Usage: !delete-attack <attackID>');
     }
 
     const db = (await import('../utils/db.js')).getDB();
@@ -24,31 +24,32 @@ export default {
     };
 
     const serverData = db.data.servers[guildId];
+    const { attacks = [], defenses = [], users = [] } = serverData;
 
-    const index = serverData.attacks.findIndex(a => a.id === attackId);
+    const index = attacks.findIndex(a => a.id === attackId);
     if (index === -1) {
       return message.reply('❌ Attack not found.');
     }
 
-    const deleted = serverData.attacks.splice(index, 1)[0];
+    const deleted = attacks.splice(index, 1)[0];
 
-    // 🔍 Clean up from attacker's gallery
-    const attacker = serverData.users.find(u => u.id === deleted.from);
-    if (attacker && attacker.gallery) {
-      attacker.gallery = attacker.gallery.filter(entry => {
-        return !(
-          entry.imageUrl === deleted.imageUrl &&
-          entry.timestamp === deleted.timestamp &&
-          entry.points === deleted.points
-        );
-      });
+    // 🧹 Remove from attacker's gallery
+    const attacker = users.find(u => u.id === deleted.from);
+    if (attacker?.gallery && Array.isArray(attacker.gallery)) {
+      attacker.gallery = attacker.gallery.filter(entry =>
+        !(entry.imageUrl === deleted.imageUrl && entry.timestamp === deleted.timestamp)
+      );
     }
+
+    // 🧼 Optional: remove related defenses for this attack
+    serverData.defenses = defenses.filter(d => d.attackId !== deleted.id);
 
     await db.write();
 
     message.channel.send(
       `🗑️ Deleted attack from <@${deleted.from}> to <@${deleted.to}>.\n` +
-      `🆔 Attack ID: \`${attackId}\` | Type: **${deleted.type}** | Points: **${deleted.points}**`
+      `🆔 Attack ID: \`${attackId}\` | 🎨 Type: **${deleted.type}** | 🏅 Points: **${deleted.points}**`
     );
   }
 };
+
