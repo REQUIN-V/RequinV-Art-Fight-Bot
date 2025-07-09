@@ -21,14 +21,14 @@ export default {
     const server = db.data.servers[guildId];
     const { attacks = [], defends = [], users = [], settings = {} } = server;
 
-    // ✅ Properly handle array-based team storage
     const definedTeams = Array.isArray(settings.teams) ? settings.teams.map(t => t.trim()) : [];
 
     if (definedTeams.length !== 2) {
       return message.reply('⚠️ No teams have been defined yet. Use `!set-event-teams <TeamA> <TeamB>` first.');
     }
 
-    const teamScores = Object.fromEntries(definedTeams.map(team => [team, 0]));
+    const [teamA, teamB] = definedTeams;
+    const teamScores = { [teamA]: 0, [teamB]: 0 };
 
     for (const user of users) {
       const { team } = user;
@@ -39,22 +39,30 @@ export default {
       teamScores[team] += attackPoints + defendPoints;
     }
 
-    const totalPoints = Object.values(teamScores).reduce((a, b) => a + b, 0) || 1;
-    const totalBars = 20;
-    const barColors = ['⬜', '🩷'];
+    const scoreA = teamScores[teamA];
+    const scoreB = teamScores[teamB];
+    const total = scoreA + scoreB || 1;
 
-    const bar = Object.entries(teamScores)
-      .map(([team, score], i) => {
-        const percent = (score / totalPoints) * 100;
-        const bars = Math.round((percent / 100) * totalBars);
-        return `${barColors[i % barColors.length].repeat(bars)} ${team} — ${score} pts (${percent.toFixed(1)}%)`;
-      })
-      .join('\n');
+    const percentA = (scoreA / total) * 100;
+    const percentB = 100 - percentA;
+
+    const totalBars = 20;
+    const barsA = Math.round((percentA / 100) * totalBars);
+    const barsB = totalBars - barsA;
+
+    const whiteBlock = '⬜'; // Team A
+    const pinkBlock = '💟'; // Team B
+    const bar = whiteBlock.repeat(barsA) + pinkBlock.repeat(barsB);
 
     const embed = {
       title: '📊 Live Team Scoreboard',
       color: 0xff9ecb,
-      description: bar,
+      description:
+        `🏳️ **${teamA}** — ${scoreA} pts\n` +
+        `🏳️ **${teamB}** — ${scoreB} pts\n\n` +
+        `${bar}\n\n` +
+        `⬜ ${teamA} — ${percentA.toFixed(1)}%\n` +
+        `💟 ${teamB} — ${percentB.toFixed(1)}%`,
       footer: { text: 'Updated live as attacks/defenses are submitted.' }
     };
 
@@ -65,3 +73,4 @@ export default {
     return message.channel.send({ embeds: [embed] });
   }
 };
+
