@@ -41,10 +41,15 @@ export default {
 
     const scoreA = teamScores[teamA];
     const scoreB = teamScores[teamB];
-    const total = scoreA + scoreB || 1;
+    const total = scoreA + scoreB;
 
-    const percentA = (scoreA / total) * 100;
-    const percentB = 100 - percentA;
+    let percentA = 0;
+    let percentB = 0;
+
+    if (total > 0) {
+      percentA = (scoreA / total) * 100;
+      percentB = (scoreB / total) * 100;
+    }
 
     const totalBars = 20;
     const barsA = Math.round((percentA / 100) * totalBars);
@@ -60,7 +65,7 @@ export default {
       description:
         `🏳️ **${teamA}** — ${scoreA} pts\n` +
         `🏳️ **${teamB}** — ${scoreB} pts\n\n` +
-        `${bar}\n\n` +
+        `${bar || 'No points yet.'}\n\n` +
         `⬜ ${teamA} — ${percentA.toFixed(1)}%\n` +
         `💟 ${teamB} — ${percentB.toFixed(1)}%`,
       footer: { text: 'Updated live as attacks/defenses are submitted.' }
@@ -73,4 +78,3 @@ export default {
     return message.channel.send({ embeds: [embed] });
   }
 };
-
