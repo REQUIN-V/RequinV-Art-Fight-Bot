@@ -7,9 +7,9 @@ export default {
 
     const guildId = message.guild.id;
     const userId = message.author.id;
-    const teamName = args.join(' ').trim();
+    const teamInput = args.join(' ').trim();
 
-    if (!teamName) {
+    if (!teamInput) {
       return message.reply('❌ Usage: !join-team <TeamName>');
     }
 
@@ -17,22 +17,23 @@ export default {
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
       users: [],
-      teams: {},
       settings: {}
     };
 
     const server = db.data.servers[guildId];
     const user = server.users.find(u => u.id === userId);
-    const teams = server.teams || {};
-    const validTeams = Object.values(teams);
+    const availableTeams = server.settings?.teams || [];
 
     if (!user) {
       return message.reply('❌ You must register your character before joining a team.');
     }
 
-    if (!validTeams.includes(teamName)) {
+    // Match team regardless of case
+    const matchedTeam = availableTeams.find(t => t.toLowerCase() === teamInput.toLowerCase());
+
+    if (!matchedTeam) {
       return message.reply(
-        `❌ Team "${teamName}" is not available.\nValid teams: ${validTeams.join(' or ')}`
+        `❌ Team "${teamInput}" is not available.\nValid teams: ${availableTeams.join(' or ')}`
       );
     }
 
@@ -40,9 +41,9 @@ export default {
       return message.reply(`🚫 You’ve already joined **${user.team}**. Team changes are locked for this event.`);
     }
 
-    user.team = teamName;
+    user.team = matchedTeam;
     await db.write();
 
-    message.channel.send(`🎉 ${message.author.username} has joined **${teamName}**!`);
+    message.channel.send(`🎉 ${message.author.username} has joined **${matchedTeam}**!`);
   }
 };
