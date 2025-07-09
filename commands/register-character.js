@@ -76,7 +76,7 @@ export default {
       embeds: [{
         title: `🎨 New Character Registered`,
         description: `🆔 Character ID: \`${charId}\``,
-        color: 0x93c5fd,
+        color: 0xff9ecb, // 💖 Pink embed color
         image: { url: imageUrl }
       }]
     });
