@@ -8,6 +8,8 @@ export default {
     await db.read();
 
     const guildId = message.guild.id;
+    const userId = message.author.id;
+
     const name = args.join(' ').trim();
     const attachment = message.attachments.first();
 
@@ -16,8 +18,6 @@ export default {
     }
 
     const contentType = attachment.contentType || '';
-
-    // Reject non-image file types
     if (
       contentType.startsWith('audio/') ||
       contentType.startsWith('video/') ||
@@ -27,17 +27,16 @@ export default {
     }
 
     const imageUrl = attachment.url;
-    const userId = message.author.id;
     const charId = `${Date.now().toString(36)}-${crypto.randomBytes(2).toString('hex')}`;
 
-    // 🔧 Initialize server-specific data
+    // Ensure server structure
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
+      settings: {},
       users: [],
       teams: {},
-      settings: {},
       attacks: [],
-      defends: []
+      defenses: []
     };
 
     const server = db.data.servers[guildId];
@@ -52,8 +51,9 @@ export default {
     if (user) {
       user.characters = user.characters || [];
 
-      // Prevent duplicate characters
-      const dupe = user.characters.find(c => c.name === name && c.imageUrl === imageUrl);
+      const dupe = user.characters.find(
+        c => c.name.toLowerCase() === name.toLowerCase() && c.imageUrl === imageUrl
+      );
       if (dupe) {
         return message.reply('❌ You already registered this character.');
       }
@@ -64,16 +64,21 @@ export default {
         id: userId,
         characters: [newCharacter],
         gallery: [],
+        defenses: [],
         team: null
       });
     }
 
     await db.write();
 
-    message.channel.send(
-      `✅ Character **${name}** registered successfully!\n🆔 Character ID: \`${charId}\``
-    );
+    return message.channel.send({
+      content: `✅ Character **${name}** registered successfully!`,
+      embeds: [{
+        title: `🎨 New Character Registered`,
+        description: `🆔 Character ID: \`${charId}\``,
+        color: 0x93c5fd,
+        image: { url: imageUrl }
+      }]
+    });
   }
 };
-
-
