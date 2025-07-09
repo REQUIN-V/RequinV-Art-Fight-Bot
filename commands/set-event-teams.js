@@ -8,10 +8,13 @@ export default {
       return message.reply('❌ You don’t have permission to use this command.');
     }
 
-    const [teamA, teamB] = args;
-    if (!teamA || !teamB) {
+    const [rawTeamA, rawTeamB] = args;
+    if (!rawTeamA || !rawTeamB) {
       return message.reply('❌ Usage: `!set-event-teams <teamA> <teamB>`');
     }
+
+    const teamA = rawTeamA.trim();
+    const teamB = rawTeamB.trim();
 
     const db = getDB();
     await db.read();
@@ -25,8 +28,8 @@ export default {
       defends: [],
     };
 
-    // Store as a flat array, not an object
-    db.data.servers[guildId].settings.teams = [teamA.trim(), teamB.trim()];
+    // Store the team names as an array for simplicity and consistency
+    db.data.servers[guildId].settings.teams = [teamA, teamB];
 
     await db.write();
 
