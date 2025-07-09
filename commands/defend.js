@@ -34,8 +34,13 @@ export default {
     const tag = args[2]?.toLowerCase();
     const description = args.slice(3).join(' ') || '';
     const attachment = message.attachments.first();
-    const imageUrl = attachment?.url;
-    const contentType = attachment?.contentType || '';
+
+    if (!attachment || !attachment.url || !attachment.contentType) {
+      return message.reply('❌ Please attach a valid image file (PNG, JPG, JPEG, etc).');
+    }
+
+    const imageUrl = attachment.url;
+    const contentType = attachment.contentType;
 
     const effortLevels = {
       minimal: 1,
@@ -59,7 +64,9 @@ export default {
       contentType.startsWith('audio/') ||
       contentType.startsWith('video/') ||
       contentType === 'application/octet-stream'
-    ) return message.reply('❌ Only image files are allowed. No audio or video files.');
+    ) {
+      return message.reply('❌ Only image files are allowed. No audio, video, or raw files.');
+    }
 
     if (!allowedTags.includes(tag)) return message.reply(`❌ Invalid tag. Allowed tags: ${allowedTags.join(', ')}`);
     if (!allow18 && tag === '18+') {
@@ -161,7 +168,7 @@ export default {
         components: [downloadRow]
       });
     } catch (err) {
-      console.warn('⚠️ Could not DM original attacker.');
+      console.warn('⚠️ Could not DM original attacker.', err.message);
     }
 
     const logChannelId = settings?.logChannel;
