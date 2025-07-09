@@ -175,9 +175,9 @@ export default {
     if (logChannelId) {
       const logChannel = message.guild.channels.cache.get(logChannelId);
       if (logChannel?.isTextBased()) {
-        const row = new ActionRowBuilder().addComponents(
+        const modRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`deleteDefend:${defendId}`)
+            .setCustomId(`deleteLog:defend:${defendId}`)
             .setLabel('🗑️ Delete')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
@@ -185,9 +185,8 @@ export default {
             .setStyle(ButtonStyle.Link)
             .setURL('https://report.cybertip.org/reporting')
         );
-        await logChannel.send({ embeds: [embed], components: [row] });
+        await logChannel.send({ embeds: [embed], components: [modRow] });
       }
     }
   }
 };
-
