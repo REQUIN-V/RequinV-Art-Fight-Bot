@@ -12,7 +12,7 @@ export default {
     const db = getDB();
     await db.read();
 
-    // Initialize server-specific settings
+    // Initialize server-specific structure
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
       settings: {},
@@ -25,21 +25,21 @@ export default {
     const server = db.data.servers[guildId];
 
     let bannerUrl = args[0];
-
-    const isImageUrl = url =>
-      typeof url === 'string' &&
-      /^https?:\/\/.+/i.test(url) &&
-      /\.(png|jpe?g|gif|webp|bmp|svg)?(\?.*)?$/i.test(url);
-
     const attachment = message.attachments.first();
+
+    const isImageUrl = (url) =>
+      typeof url === 'string' &&
+      /^https?:\/\/[^ ]+\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+
+    // Use attachment if URL arg is invalid or missing
     if ((!isImageUrl(bannerUrl) || !bannerUrl) && attachment) {
-      const type = attachment.contentType || '';
-      if (type.startsWith('image/')) {
+      const contentType = attachment.contentType || '';
+      if (contentType.startsWith('image/')) {
         bannerUrl = attachment.url;
       }
     }
 
-    if (!bannerUrl) {
+    if (!isImageUrl(bannerUrl)) {
       return message.reply('⚠️ Please provide a valid image URL or upload an image with the command.');
     }
 
