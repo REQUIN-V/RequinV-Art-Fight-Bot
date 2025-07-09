@@ -13,18 +13,18 @@ export default {
       return message.reply('❌ Usage: !delete-character <characterID>');
     }
 
-    // Ensure server data exists
+    // Initialize server data
     db.data.servers = db.data.servers || {};
     db.data.servers[guildId] = db.data.servers[guildId] || {
       settings: {},
       users: [],
       attacks: [],
-      defenses: []
+      defenses: [],
+      teams: {}
     };
 
     const serverData = db.data.servers[guildId];
 
-    // Find the user entry in this server
     const user = serverData.users.find(u => u.id === userId);
     if (!user || !Array.isArray(user.characters) || user.characters.length === 0) {
       return message.reply('❌ You haven’t registered any characters.');
@@ -48,17 +48,19 @@ export default {
     const filter = m => m.author.id === userId && m.content.toLowerCase() === 'yes';
 
     try {
-      await message.channel.awaitMessages({
+      const collected = await message.channel.awaitMessages({
         filter,
         max: 1,
         time: 20000,
         errors: ['time']
       });
 
-      user.characters.splice(characterIndex, 1);
-      await db.write();
+      if (collected) {
+        user.characters.splice(characterIndex, 1);
+        await db.write();
 
-      message.channel.send(`✅ Character **"${character.name}"** has been deleted successfully.`);
+        message.channel.send(`✅ Character **"${character.name}"** has been deleted successfully.`);
+      }
     } catch (err) {
       message.channel.send('❌ Character deletion cancelled or timed out.');
     }
